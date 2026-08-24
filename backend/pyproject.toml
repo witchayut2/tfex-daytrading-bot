@@ -1,0 +1,62 @@
+[project]
+name = "tfex-backend"
+version = "0.1.0"
+description = "TFEX SET50 Index Futures research and paper-trading platform (backend)"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.9",
+    "pyyaml>=6.0",
+    "tzdata>=2024.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "types-pyyaml>=6.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "anti_repaint: proves a non-repainting invariant from CLAUDE_TFEX.md section 27",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "SIM",  # simplify
+    "RUF",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["app", "tests", "scripts"]
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = true
+
+[tool.pydantic-mypy]
+init_typed = true
+warn_required_dynamic_aliases = true

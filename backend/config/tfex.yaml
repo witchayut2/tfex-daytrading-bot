@@ -1,0 +1,81 @@
+# TFEX SET50 Index Futures platform configuration.
+#
+# Two kinds of value live in this file:
+#   [EXCHANGE]  facts published by TFEX. Change only when the exchange changes them.
+#   [RESEARCH]  our own defaults. Not exchange rules (CLAUDE_TFEX.md section 7).
+#
+# Dynamic values are deliberately NOT here: margin rates, broker commissions, holidays and
+# last trading dates are imported with provenance and freshness, never hard-coded.
+
+market:
+  exchange: TFEX
+  timezone: Asia/Bangkok
+  instrument_family: SET50_INDEX_FUTURES
+  symbol_root: S50
+  currency: THB
+
+contract: # [EXCHANGE] SET50 Index Futures contract specification
+  point_value_thb: 200
+  tick_size_points: 0.1
+  tick_value_thb: 20
+  settlement_type: CASH
+  price_limit_reference: LATEST_SETTLEMENT
+  price_limit_percent: 30
+  max_exchange_fee_thb_per_contract_per_side: 7
+
+symbol:
+  root: S50
+  year_digits: 2
+  century_pivot_years: 50 # [RESEARCH] two-digit-year resolution half-window
+  minimum_contract_year: 2006 # [RESEARCH] verify against exchange listing history
+  maximum_years_ahead: 3 # [RESEARCH]
+
+sessions: # [EXCHANGE] regular-day boundaries, Asia/Bangkok
+  timezone: Asia/Bangkok
+  morning_preopen:
+    start: "09:15"
+    end: "09:45"
+  morning:
+    start: "09:45"
+    end: "12:30"
+  midday_break:
+    start: "12:30"
+    end: "13:45"
+  afternoon_preopen: # intentionally overlaps the midday break (section 9)
+    start: "13:15"
+    end: "13:45"
+  afternoon:
+    start: "13:45"
+    end: "16:55"
+  entry_cutoff: "16:30" # [RESEARCH]
+  end_of_day_flatten_minutes_before_close: 5 # [RESEARCH]
+
+expiry:
+  last_trading_day_cessation_time: "16:30" # [EXCHANGE]
+  closing_window_minutes: 15 # [RESEARCH]
+  require_published_last_trading_day: false # [RESEARCH] set true for order-capable modes
+
+roll: # [RESEARCH] every value in this block
+  enabled: true
+  minimum_days_before_expiry: 2 # counted in trading days
+  volume_ratio_threshold: 1.20
+  confirmation_sessions: 1
+  prevent_new_positions_on_last_trading_day_after: "15:45"
+  force_flatten_before_last_trade_stop_minutes: 15
+
+margin: # [RESEARCH] rates themselves come from the margin provider (TFEX-4)
+  free_equity_buffer_multiplier: 2.0
+  reject_when_stale: true
+
+metadata:
+  version: "1"
+  holiday_data_stale_after_days: 180 # [RESEARCH]
+  require_verified_sources: false # [RESEARCH] set true for order-capable modes
+
+time_bucket_statistics: # [RESEARCH] section 20
+  minimum_trades: 50
+  minimum_sessions: 30
+
+trading:
+  mode: PAPER
+  live_orders_enabled: false # no live route exists in this build

@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "name": "SET50 Futures margin page",
+      "url": "https://www.tfex.co.th/en/products/equity/set50-index-futures/margin",
+      "fields_consumed": [
+        "initial_margin",
+        "maintenance_margin"
+      ],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "As above; cross-check only.",
+      "refresh_interval_days": 7,
+      "note": null
+    },
+    {
+      "name": "SET50 Index Futures product trading calendar",
+      "url": "https://www.tfex.co.th/en/products/equity/set50-index-futures/trading-calendar",
+      "fields_consumed": [
+        "contract_month",
+        "first_trading_day",
+        "last_trading_day"
+      ],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "Fall back to the derived last-trading-day rule and stamp the contract as DERIVED_RULE. Rejected when expiry.require_published_last_trading_day is true.",
+      "refresh_interval_days": 30,
+      "note": null
+    },
+    {
+      "name": "SET50 Index overview",
+      "url": "https://www.set.or.th/en/market/index/set50/overview",
+      "fields_consumed": [
+        "index_level"
+      ],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "Basis calculations are skipped and reported as unavailable.",
+      "refresh_interval_days": null,
+      "note": "Optional spot reference for basis analysis (section 14 of CLAUDE_TFEX.md)."
+    },
+    {
+      "name": "Settrade Open API broker list",
+      "url": "https://developer.settrade.com/open-api/document/broker-list",
+      "fields_consumed": [],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "Live connectivity blocked until the broker is confirmed supported.",
+      "refresh_interval_days": null,
+      "note": "Section 26 prerequisite 1."
+    },
+    {
+      "name": "Settrade Open API documentation",
+      "url": "https://developer.settrade.com/open-api/",
+      "fields_consumed": [],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "Adapter interfaces only; no live connectivity in this build.",
+      "refresh_interval_days": null,
+      "note": "Reference only until a broker and credentials exist (section 26)."
+    },
+    {
+      "name": "Settrade derivatives use cases",
+      "url": "https://developer.settrade.com/open-api/use-case",
+      "fields_consumed": [],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "Reference only.",
+      "refresh_interval_days": null,
+      "note": null
+    },
+    {
+      "name": "TFEX SET50 Index Futures contract specification",
+      "url": "https://www.tfex.co.th/en/products/equity/set50-index-futures/contract-specification",
+      "fields_consumed": [
+        "multiplier",
+        "tick_size",
+        "tick_value",
+        "listed_contract_months",
+        "daily_price_limit",
+        "trading_hours",
+        "last_trading_day_rule",
+        "settlement_method"
+      ],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "Use the checked-in contract configuration and mark contract metadata unverified. Order-capable modes reject.",
+      "refresh_interval_days": 90,
+      "note": null
+    },
+    {
+      "name": "TFEX annual trading calendar",
+      "url": "https://www.tfex.co.th/en/about/trading-calendar",
+      "fields_consumed": [
+        "trading_days",
+        "shortened_sessions"
+      ],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "Calendar raises CalendarDataUnavailableError for unloaded years.",
+      "refresh_interval_days": 30,
+      "note": null
+    },
+    {
+      "name": "TFEX holidays",
+      "url": "https://www.tfex.co.th/en/about/holiday",
+      "fields_consumed": [
+        "holiday_date",
+        "holiday_name"
+      ],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "Calendar raises CalendarDataUnavailableError for unloaded years.",
+      "refresh_interval_days": 30,
+      "note": null
+    },
+    {
+      "name": "TFEX margin announcements",
+      "url": "https://www.tfex.co.th/en/market-data/news-and-notice/margin",
+      "fields_consumed": [
+        "initial_margin",
+        "maintenance_margin",
+        "effective_date"
+      ],
+      "retrieval_date": null,
+      "effective_date": null,
+      "fingerprint": null,
+      "last_verification_result": "NOT_VERIFIED",
+      "last_verification_at": null,
+      "fallback_behavior": "Margin gate rejects new positions when margin.reject_when_stale is true (TFEX-4).",
+      "refresh_interval_days": 7,
+      "note": null
+    }
+  ]
+}

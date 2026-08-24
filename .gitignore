@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node (from TFEX-6 onwards)
+node_modules/
+dist/
+build/
+
+# Local environment
+.env
+.env.local
+
+# Editors
+.idea/
+.vscode/
+
+# Note: backend/uv.lock IS committed - reproducible environments matter for replay parity.
+# Note: backend/data/tfex/holidays/*.json IS committed - imported exchange metadata is
+# versioned data, and a replay must be reproducible from the repository alone.
