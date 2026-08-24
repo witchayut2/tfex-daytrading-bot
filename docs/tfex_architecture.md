@@ -1,7 +1,9 @@
 # TFEX Platform Architecture
 
-Status: **Milestone TFEX-1 complete.** Configuration, provenance, calendar, contracts and
-sessions are implemented. Everything downstream of them is not.
+Status: **Milestone TFEX-1 complete, plus the data-readiness gate.** Configuration,
+provenance, calendar, contracts, sessions, cost provenance and market-data validation are
+implemented, and the calendar now runs on **real imported exchange data**. TFEX-2 is blocked
+on real 1-minute market data (`docs/tfex_data_readiness_gate.md`).
 
 Read with `CLAUDE.md` and `CLAUDE_TFEX.md`. Where this document and the specification
 disagree, the specification wins; where this document records a *decision* the specification
@@ -26,12 +28,23 @@ Commands (from `backend/`):
 ```bash
 uv sync
 uv run pytest tests/tfex
-uv run pytest -m anti_repaint     # the anti-repaint subset
+uv run pytest -m anti_repaint          # the anti-repaint subset
+uv run pytest -m real_market_data      # skips without a real dataset
+
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy .
-uv run python scripts/validate_calendar_data.py
-uv run python scripts/render_official_sources.py
+
+# metadata import and verification
+uv run python scripts/import_tfex_holidays.py --year 2026
+uv run python scripts/import_tfex_contracts.py
+uv run python scripts/validate_calendar_data.py --year 2026
+uv run python scripts/update_source_verification.py --corroborate-spec
+
+# market data
+uv run python scripts/data_sources/settrade_history.py --probe --symbol S50Z26
+uv run python scripts/validate_tfex_market_data.py \
+    --file <path> --symbol S50Z26 --interval 1m --timezone Asia/Bangkok
 ```
 
 ## 2. Layering
@@ -39,9 +52,11 @@ uv run python scripts/render_official_sources.py
 Dependencies point one way. Nothing below imports anything above it.
 
 ```text
-config.py ......... exchange facts + research defaults, validated on load
 errors.py ......... typed failure hierarchy
 provenance.py ..... where every piece of exchange metadata came from
+costs/models.py ... fee provenance: a published cap is not an actual charge
+      │
+config.py ......... exchange facts + research defaults, validated on load
       │
 calendar/ ......... imported holiday data -> trading days -> expiry
       │
@@ -49,8 +64,15 @@ contracts/ ........ symbols -> resolved contracts -> registry -> roll policy
       │
 sessions/ ......... phases for a date -> session state -> entry/exit gates
       │
-(TFEX-2+) feeds, candles, structure, strategies, risk, brokers, dashboard
+marketdata/ ....... bars -> dataset provenance -> validation -> acceptance gate
+      │
+(TFEX-2+) candles, structure, strategies, risk, brokers, dashboard
 ```
+
+`config.py` imports `costs/models.py` for its two provenance enums, so `costs/__init__.py`
+re-exports **only** that leaf module; the builder functions live in `costs/exchange_fees.py`
+and `costs/commissions.py` and are imported directly. Re-exporting them from the package
+would close an import cycle.
 
 `sessions/boundaries.py` is deliberately **pure**: it takes facts (is this a trading day? is
 it the last trading day? was an early close announced?) and returns intervals. The calendar
@@ -101,6 +123,14 @@ know it), and a strategy may only read values whose `confirmed_at` has passed.
 | `sessions/boundaries.py` | `SessionState`, phase layout for a date, precedence rules. |
 | `sessions/midday_break.py` | The predicates the TFEX-2 candle aggregation will enforce. |
 | `sessions/engine.py` | Session state and the entry/exit/flatten gates. |
+| `costs/models.py` | `FeeProvenanceStatus`, `FeeComponent`, `RoundTripCostEstimate`. A published cap physically refuses to be charged as a production cost. |
+| `costs/exchange_fees.py` | The THB 7 cap (never chargeable) and the actual fee (`UNKNOWN` until verified). |
+| `costs/commissions.py` | Broker commission — negotiable, so `UNKNOWN` with no default. |
+| `marketdata/models.py` | `Bar`, `DatasetManifest`, and the granular report types. |
+| `marketdata/csv_loader.py` | Reads a vendor CSV. A naive timestamp requires a declared source timezone. |
+| `marketdata/validation.py` | Eleven independent data-quality checks (section 28). |
+| `marketdata/manifest.py` | Dataset provenance and checksum enforcement. |
+| `marketdata/acceptance.py` | The guard that stops fixtures promoting a milestone. |
 
 Everything else under `app/tfex/` exists as a documented placeholder naming its milestone and
 the invariant it must hold. They contain no logic — a half-implemented opening range is
@@ -120,31 +150,46 @@ exactly how repaint risk R4 gets in.
 | D8 | A roll criterion whose input is missing. | Recorded as *skipped*, never as passing. Session volume is mandatory — a comparison with every criterion skipped does not vacuously dominate. | Volume is the evidence a roll is founded on. |
 | D9 | Trading a contract without expiry context. | `SessionEngine.new_position_decision` denies when no `ContractExpiry` is supplied. | Section 6: the contract must come from the registry before any trading decision. |
 | D10 | An early close on a day with an early *morning* close. | The midday break starts at the actual morning close and runs to 13:45. | Otherwise a hard-coded 12:30 would let a bar cover 11:45–12:00 on such a day. |
+| D11 | Does a replay of mid-September 2026 need the 2025 and 2027 calendars? | `required_years_for` pads a neighbouring year only when the range comes within 31 days of the boundary. | TFEX publishes next year's calendar only late in the current year, so unconditional padding is a false blocker. This is precision, not relaxation: `HolidayStore.year()` still raises the moment anything actually reaches into an unimported year. |
+| D12 | Is THB 7 per contract per side a cost? | No — it is a **cap**, modelled as `VERIFIED_EXCHANGE_CAP` with `production_charge=False`. The actual fee is `UNKNOWN`. | Deducting a cap as an actual charge overstates expenses, rejects viable strategies, and will not reconcile against a broker statement. |
+| D13 | What counts as a verified source? | A ladder: `NOT_VERIFIED` → `RETRIEVED` → `PARSED` → `CROSS_CHECKED` → `VERIFIED_OFFICIAL`, plus `STALE` / `CONFLICT` / `UNAVAILABLE`. Only the top two count as verified. | "We fetched it" must never be mistaken for "we confirmed it". Verification is per source *and* per fact. |
+| D14 | A synthetic dataset that validates cleanly. | Can never satisfy TFEX-2 acceptance; `mark_tfex2_complete` raises. | Fixtures prove the code matches its author's expectations, not that it survives real quiet minutes, feed gaps and off-tick prints. |
 
 ## 6. What the platform refuses to ship
 
-- **Holiday dates.** None. `backend/data/tfex/holidays/` contains a schema and an import
-  procedure, and the calendar raises for any year not imported. A wrong holiday moves the
-  last business day of a month, which moves the last trading day, which moves the expiry
-  gate.
+- **Invented holiday dates.** Real 2026 data is now imported from the exchange with SHA-256
+  provenance; 2025 and 2027 are **not** available from the source and remain unimported, so
+  the calendar raises for them. A wrong holiday moves the last business day of a month, which
+  moves the last trading day, which moves the expiry gate.
+- **Fabricated market data.** No synthetic candle is ever labelled as real, and
+  `mark_tfex2_complete` refuses to promote a milestone on fixtures alone.
+- **An exchange fee cap presented as an actual cost.** See D12.
 - **Margin numbers.** Section 22 forbids embedding a current margin in code. TFEX-4 adds a
   versioned provider that takes the stricter of official, broker-reported and configured
-  safety margin.
+  safety margin. (The series endpoint does publish an initial margin; it was deliberately not
+  imported, because margin is dynamic and belongs to the versioned provider.)
 - **A live order route.** `TradingConfig` raises `LiveTradingDisabledError` if anything sets
   `live_orders_enabled: true`, including via YAML. Section 32's gates are not met and this
   build has no broker connectivity.
-- **Verified source claims.** The official-source register seeds every entry as
-  `NOT_VERIFIED` with no retrieval date, because nothing has been checked yet.
+- **Overstated verification.** The register seeds every source as `NOT_VERIFIED`, and
+  statuses are written from stored captures by `scripts/update_source_verification.py`, not
+  by hand. Six of ten sources are still `NOT_VERIFIED` today, including both margin pages.
 
 ## 7. Testing
 
-277 tests under `backend/tests/tfex/`. Tests that encode a non-repainting invariant carry
-the `anti_repaint` marker so the suite required by section 31 can be run on its own.
+374 tests under `backend/tests/tfex/` (365 run, 9 skip for want of real data). Two markers:
+
+- `anti_repaint` — encodes a non-repainting invariant, so the suite section 31 requires can
+  be run on its own.
+- `real_market_data` — requires a validated non-synthetic dataset on disk. These **skip**
+  today, and skipping is not passing.
 
 Calendar fixtures use **invented** holiday dates, chosen to exercise the awkward cases: a
 holiday on the last calendar day of a month (June), a holiday sitting between the last two
 business days (September), and a closure spanning a year boundary (Dec 2025 → Jan 2026).
-They are labelled as fixtures in `conftest.py` so they can never be mistaken for TFEX data.
+They are labelled as fixtures in `conftest.py` so they can never be mistaken for TFEX data,
+and they are kept separate from the real imported data under `backend/data/tfex/official/`,
+which the `real_market_data` tests use instead.
 
 ## 8. Next: Milestone TFEX-2
 
@@ -152,5 +197,8 @@ Raw contract CSV import, 1m/5m/15m aggregation aligned to TFEX sessions, midday-
 handling, morning/afternoon snapshots, full-day and session VWAP, opening ranges, and the gap
 engine — plus `docs/tfex_candle_alignment.md`, which section 10 requires.
 
-Blocked on operator action: official holiday data must be imported before any of it can be
-validated against real dates. See `docs/development_status.md`.
+**Blocked.** `docs/tfex_data_readiness_gate.md` records the decision
+`BLOCKED_REAL_MARKET_DATA`: no real 1-minute SET50 futures dataset could be acquired, and
+none was fabricated in its place. The validator, the manifests and the acceptance gate are
+already in place, so the moment a legitimate dataset arrives it can be validated and TFEX-2
+can begin against it.

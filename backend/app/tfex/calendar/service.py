@@ -158,15 +158,35 @@ class TradingCalendar:
             "effective_overrides": len(year_data.effective_overrides),
         }
 
+    #: How close to a year boundary a range must come before the neighbouring year's data is
+    #: genuinely needed. Previous/next-trading-day walks and end-of-month expiry rules cross
+    #: the boundary, but never by more than a few days; a month of margin covers every walk
+    #: this platform performs.
+    YEAR_BOUNDARY_MARGIN_DAYS = 31
+
     def required_years_for(self, start: date, end: date) -> tuple[int, ...]:
         """Years whose data must be imported to answer questions across ``[start, end]``.
 
-        Includes the neighbouring years because previous/next-trading-day walks and
-        end-of-month expiry rules routinely cross a year boundary.
+        A neighbouring year is required only when the range comes within
+        :data:`YEAR_BOUNDARY_MARGIN_DAYS` of the boundary, because that is when a
+        previous/next-trading-day walk or an end-of-month expiry rule actually reaches into
+        it. A mid-year range does not need the adjacent years, and demanding them would be a
+        false blocker — TFEX publishes next year's calendar only late in the current year.
+
+        This is a *precision* change, not a relaxation. The fail-closed guarantee lives in
+        :meth:`HolidayStore.year`, which still raises the moment any operation actually
+        touches an unimported year. :meth:`preflight` is an early warning built on top of it.
         """
         first = min(start, end)
         last = max(start, end)
-        return tuple(range(first.year - 1, last.year + 2))
+        margin = timedelta(days=self.YEAR_BOUNDARY_MARGIN_DAYS)
+
+        years = set(range(first.year, last.year + 1))
+        if (first - date(first.year, 1, 1)) < margin:
+            years.add(first.year - 1)
+        if (date(last.year, 12, 31) - last) < margin:
+            years.add(last.year + 1)
+        return tuple(sorted(years))
 
     def preflight(self, start: date, end: date) -> None:
         """Fail before a run starts rather than in the middle of it."""

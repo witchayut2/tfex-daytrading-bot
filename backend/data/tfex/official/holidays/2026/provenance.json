@@ -1,0 +1,36 @@
+{
+  "source_id": "tfex-holiday-2026",
+  "authority": "Thailand Futures Exchange",
+  "source_type": "OFFICIAL_EXCHANGE",
+  "source_title": "TFEX Holiday",
+  "year": 2026,
+  "status": "VERIFIED_OFFICIAL",
+  "verification_basis": "retrieved directly from the exchange's own holiday endpoint and cross-checked between the English and Thai language variants",
+  "retrieved_at": "2026-08-24T06:32:03.839723+00:00",
+  "effective_year": 2026,
+  "stale_after": "2027-02-20T06:32:03.839723+00:00",
+  "parser_version": "tfex-holiday-parser/1",
+  "importer_version": "import_tfex_holidays/1",
+  "holiday_count": 20,
+  "special_holiday_count": 2,
+  "requests": {
+    "en": {
+      "url": "https://www.tfex.co.th/api/cms/v1/holidays/year/2026?lang=en",
+      "http_status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "content_length": 1772,
+      "sha256": "895393b6896c9cd567b531d608c36cccb0495eeb8c7af6a601fc25ad6d18b11a",
+      "retrieved_at": "2026-08-24T06:32:03.839723+00:00"
+    },
+    "th": {
+      "url": "https://www.tfex.co.th/api/cms/v1/holidays/year/2026?lang=th",
+      "http_status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "content_length": 3133,
+      "sha256": "3231597e2343824703b85a1e13480f8f6091467a01a43c249767475d9b18d1fb",
+      "retrieved_at": "2026-08-24T06:32:04.189990+00:00"
+    }
+  },
+  "human_page": "https://www.tfex.co.th/en/about/holiday",
+  "notes": "Raw files in this directory are immutable captures. Their SHA-256 is recorded above; do not edit them. Regenerate by re-running the importer, which writes a new capture and a new retrieved_at."
+}

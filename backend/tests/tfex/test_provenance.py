@@ -55,7 +55,7 @@ def test_recording_a_verification_stamps_retrieval_and_fingerprint() -> None:
     fingerprint = content_fingerprint("2026-01-01 New Year")
 
     updated = registry.record_verification(
-        name, result=VerificationResult.VERIFIED_CHANGED, at=NOW, fingerprint=fingerprint
+        name, result=VerificationResult.CROSS_CHECKED, at=NOW, fingerprint=fingerprint
     )
 
     assert updated.is_verified
@@ -65,10 +65,47 @@ def test_recording_a_verification_stamps_retrieval_and_fingerprint() -> None:
     assert name not in {record.name for record in registry.unverified()}
 
 
+def test_retrieval_alone_is_not_verification() -> None:
+    """Fetching a page proves it exists, not that its content was confirmed."""
+    registry = OfficialSourceRegistry()
+    updated = registry.record_verification(
+        "TFEX holidays", result=VerificationResult.RETRIEVED, at=NOW
+    )
+    assert updated.is_retrieved
+    assert not updated.is_verified
+    assert updated.retrieval_date == NOW
+
+    parsed = registry.record_verification("TFEX holidays", result=VerificationResult.PARSED, at=NOW)
+    assert parsed.is_retrieved
+    assert not parsed.is_verified
+
+
+def test_a_conflict_is_not_verification() -> None:
+    updated = OfficialSourceRegistry().record_verification(
+        "SET50 Index Futures product trading calendar",
+        result=VerificationResult.CONFLICT,
+        at=NOW,
+    )
+    assert not updated.is_verified
+
+
+def test_a_capture_time_may_differ_from_the_verification_time() -> None:
+    """Freshness is measured from when the bytes were fetched, not when they were checked."""
+    captured = NOW - timedelta(days=3)
+    updated = OfficialSourceRegistry().record_verification(
+        "TFEX holidays",
+        result=VerificationResult.VERIFIED_OFFICIAL,
+        at=NOW,
+        retrieved_at=captured,
+    )
+    assert updated.retrieval_date == captured
+    assert updated.last_verification_at == NOW
+
+
 def test_an_unreachable_source_does_not_count_as_retrieved() -> None:
     registry = OfficialSourceRegistry()
     updated = registry.record_verification(
-        "TFEX holidays", result=VerificationResult.UNREACHABLE, at=NOW
+        "TFEX holidays", result=VerificationResult.UNAVAILABLE, at=NOW
     )
     assert not updated.is_verified
     assert updated.retrieval_date is None
@@ -80,7 +117,7 @@ def test_a_verification_result_without_a_timestamp_is_rejected() -> None:
             name="x",
             url=HttpUrl("https://example.com/"),
             fallback_behavior="stop",
-            last_verification_result=VerificationResult.VERIFIED_UNCHANGED,
+            last_verification_result=VerificationResult.VERIFIED_OFFICIAL,
         )
 
 
@@ -90,7 +127,7 @@ def test_due_for_refresh_includes_sources_never_retrieved() -> None:
     assert "TFEX holidays" in due
 
     registry.record_verification(
-        "TFEX holidays", result=VerificationResult.VERIFIED_UNCHANGED, at=NOW
+        "TFEX holidays", result=VerificationResult.VERIFIED_OFFICIAL, at=NOW
     )
     assert "TFEX holidays" not in {r.name for r in registry.due_for_refresh(NOW)}
     later = NOW + timedelta(days=31)
@@ -101,7 +138,7 @@ def test_registry_round_trips_through_json(tmp_path: Path) -> None:
     registry = OfficialSourceRegistry()
     registry.record_verification(
         "TFEX holidays",
-        result=VerificationResult.VERIFIED_UNCHANGED,
+        result=VerificationResult.VERIFIED_OFFICIAL,
         at=NOW,
         fingerprint="sha256:abc",
     )

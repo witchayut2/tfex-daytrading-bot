@@ -1,0 +1,187 @@
+{
+  "exchange": "TFEX",
+  "year": 2026,
+  "timezone": "Asia/Bangkok",
+  "holidays": [
+    {
+      "date": "2026-01-01",
+      "name_en": "New Year's Day",
+      "name_th": "วันขึ้นปีใหม่",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "New Year's Day",
+      "raw_description_th": "วันขึ้นปีใหม่"
+    },
+    {
+      "date": "2026-01-02",
+      "name_en": "Additional special holiday",
+      "name_th": "วันหยุดทำการเพิ่มเติมเป็นกรณีพิเศษ",
+      "holiday_type": "SPECIAL_HOLIDAY",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Additional special holiday",
+      "raw_description_th": "วันหยุดทำการเพิ่มเติมเป็นกรณีพิเศษ"
+    },
+    {
+      "date": "2026-03-03",
+      "name_en": "Makha Bucha Day",
+      "name_th": "วันมาฆบูชา",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Makha Bucha Day",
+      "raw_description_th": "วันมาฆบูชา"
+    },
+    {
+      "date": "2026-04-06",
+      "name_en": "Chakri Memorial Day",
+      "name_th": "วันพระบาทสมเด็จพระพุทธยอดฟ้าจุฬาโลกมหาราช และวันที่ระลึกมหาจักรีบรมราชวงศ์",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Chakri Memorial Day",
+      "raw_description_th": "วันพระบาทสมเด็จพระพุทธยอดฟ้าจุฬาโลกมหาราช และวันที่ระลึกมหาจักรีบรมราชวงศ์"
+    },
+    {
+      "date": "2026-04-13",
+      "name_en": "Songkran Festival",
+      "name_th": "วันสงกรานต์",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Songkran Festival",
+      "raw_description_th": "วันสงกรานต์"
+    },
+    {
+      "date": "2026-04-14",
+      "name_en": "Songkran Festival",
+      "name_th": "วันสงกรานต์",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Songkran Festival",
+      "raw_description_th": "วันสงกรานต์"
+    },
+    {
+      "date": "2026-04-15",
+      "name_en": "Songkran Festival",
+      "name_th": "วันสงกรานต์",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Songkran Festival",
+      "raw_description_th": "วันสงกรานต์"
+    },
+    {
+      "date": "2026-05-01",
+      "name_en": "National Labor Day",
+      "name_th": "วันแรงงานแห่งชาติ",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "National Labor Day",
+      "raw_description_th": "วันแรงงานแห่งชาติ"
+    },
+    {
+      "date": "2026-05-04",
+      "name_en": "Coronation Day",
+      "name_th": "วันฉัตรมงคล",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Coronation Day",
+      "raw_description_th": "วันฉัตรมงคล"
+    },
+    {
+      "date": "2026-06-01",
+      "name_en": "Substitution for Visakha Bucha Day (Sunday 31st May 2026)",
+      "name_th": "ชดเชยวันวิสาขบูชา (วันอาทิตย์ที่ 31 พฤษภาคม 2569)",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Substitution for Visakha Bucha Day (Sunday 31st May 2026)",
+      "raw_description_th": "ชดเชยวันวิสาขบูชา (วันอาทิตย์ที่ 31 พฤษภาคม 2569)"
+    },
+    {
+      "date": "2026-06-03",
+      "name_en": "H.M. Queen Suthida Bajrasudhabimalalakshana's Birthday",
+      "name_th": "วันเฉลิมพระชนมพรรษา สมเด็จพระนางเจ้าสุทิดา พัชรสุธาพิมลลักษณ พระบรมราชินี",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "H.M. Queen Suthida Bajrasudhabimalalakshana's Birthday",
+      "raw_description_th": "วันเฉลิมพระชนมพรรษา สมเด็จพระนางเจ้าสุทิดา พัชรสุธาพิมลลักษณ พระบรมราชินี"
+    },
+    {
+      "date": "2026-07-28",
+      "name_en": "H.M. King Maha Vajiralongkorn Phra Vajiraklaochaoyuhua's Birthday",
+      "name_th": "วันเฉลิมพระชนมพรรษา พระบาทสมเด็จพระเจ้าอยู่หัว",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "H.M. King Maha Vajiralongkorn Phra Vajiraklaochaoyuhua's Birthday",
+      "raw_description_th": "วันเฉลิมพระชนมพรรษา พระบาทสมเด็จพระเจ้าอยู่หัว"
+    },
+    {
+      "date": "2026-07-29",
+      "name_en": "Asarnha Bucha Day",
+      "name_th": "วันอาสาฬหบูชา",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Asarnha Bucha Day",
+      "raw_description_th": "วันอาสาฬหบูชา"
+    },
+    {
+      "date": "2026-08-12",
+      "name_en": "H.M. Queen Sirikit The Queen Mother's Birthday / Mother's Day",
+      "name_th": "วันเฉลิมพระชนมพรรษา สมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง และวันแม่แห่งชาติ",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "H.M. Queen Sirikit The Queen Mother's Birthday / Mother's Day",
+      "raw_description_th": "วันเฉลิมพระชนมพรรษา สมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง และวันแม่แห่งชาติ"
+    },
+    {
+      "date": "2026-10-13",
+      "name_en": "H.M. King Bhumibol Adulyadej the Great Memorial Day",
+      "name_th": "วันนวมินทรมหาราช",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "H.M. King Bhumibol Adulyadej the Great Memorial Day",
+      "raw_description_th": "วันนวมินทรมหาราช"
+    },
+    {
+      "date": "2026-10-16",
+      "name_en": "Additional special holiday",
+      "name_th": "วันหยุดทำการเพิ่มเติมเป็นกรณีพิเศษ",
+      "holiday_type": "SPECIAL_HOLIDAY",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Additional special holiday *",
+      "raw_description_th": "วันหยุดทำการเพิ่มเติมเป็นกรณีพิเศษ *"
+    },
+    {
+      "date": "2026-10-23",
+      "name_en": "H.M. King Chulalongkorn the Great Memorial Day",
+      "name_th": "วันปิยมหาราช",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "H.M. King Chulalongkorn the Great Memorial Day",
+      "raw_description_th": "วันปิยมหาราช"
+    },
+    {
+      "date": "2026-12-07",
+      "name_en": "Substitution for H.M. King Bhumibol Adulyadej the Great's Birthday / National Day / Father's Day (Saturday 5th December 2026)",
+      "name_th": "ชดเชยวันคล้ายวันพระบรมราชสมภพ พระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร วันชาติ และวันพ่อแห่งชาติ (วันเสาร์ที่ 5 ธันวาคม 2569)",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Substitution for H.M. King Bhumibol Adulyadej the Great's Birthday / National Day / Father's Day (Saturday 5th December 2026)",
+      "raw_description_th": "ชดเชยวันคล้ายวันพระบรมราชสมภพ พระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร วันชาติ และวันพ่อแห่งชาติ (วันเสาร์ที่ 5 ธันวาคม 2569)"
+    },
+    {
+      "date": "2026-12-10",
+      "name_en": "Constitution Day",
+      "name_th": "วันรัฐธรรมนูญ",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "Constitution Day",
+      "raw_description_th": "วันรัฐธรรมนูญ"
+    },
+    {
+      "date": "2026-12-31",
+      "name_en": "New Year's Eve",
+      "name_th": "วันสิ้นปี",
+      "holiday_type": "FULL_CLOSURE",
+      "source_id": "tfex-holiday-2026",
+      "raw_description_en": "New Year's Eve",
+      "raw_description_th": "วันสิ้นปี"
+    }
+  ]
+}

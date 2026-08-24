@@ -26,6 +26,7 @@ testpaths = ["tests"]
 addopts = "-q --strict-markers"
 markers = [
     "anti_repaint: proves a non-repainting invariant from CLAUDE_TFEX.md section 27",
+    "real_market_data: requires a validated, non-synthetic SET50 futures dataset on disk; skipped when absent. TFEX-2 acceptance requires these to run and pass.",
 ]
 
 [tool.ruff]
@@ -45,6 +46,8 @@ select = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["E501"]
+# Entry-point scripts must put the backend root on sys.path before importing `app`.
+"scripts/**" = ["E402"]
 
 [tool.mypy]
 python_version = "3.12"

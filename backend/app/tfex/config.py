@@ -26,10 +26,14 @@ from typing import Annotated, Any, Literal, Self
 import yaml
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, ValidationError, model_validator
 
+from app.tfex.costs.models import CostScenario, FeeProvenanceStatus
 from app.tfex.errors import ConfigurationError, LiveTradingDisabledError
 
 __all__ = [
+    "CommissionConfig",
     "ContractConfig",
+    "CostsConfig",
+    "ExchangeFeeConfig",
     "ExpiryConfig",
     "MarginConfig",
     "MarketConfig",
@@ -105,7 +109,6 @@ class ContractConfig(_Frozen):
     settlement_type: Literal["CASH"] = "CASH"
     price_limit_reference: Literal["LATEST_SETTLEMENT"] = "LATEST_SETTLEMENT"
     price_limit_percent: Money = Decimal("30")
-    max_exchange_fee_thb_per_contract_per_side: Money = Decimal("7")
 
     @model_validator(mode="after")
     def _tick_arithmetic_is_consistent(self) -> Self:
@@ -215,6 +218,69 @@ class RollConfig(_Frozen):
     force_flatten_before_last_trade_stop_minutes: int = Field(default=15, ge=0, le=240)
 
 
+class ExchangeFeeConfig(_Frozen):
+    """The exchange fee, kept strictly separate from what a broker actually charges.
+
+    The contract specification publishes THB 7 per contract per side as a **maximum**. That
+    number lives in ``cap_*`` and is never a production charge. ``actual_*`` stays unset —
+    and therefore ``UNKNOWN`` — until someone verifies the rate for a specific account.
+    """
+
+    cap_thb_per_contract_per_side: Money = Decimal("7")
+    cap_source: str = "SET50 Index Futures contract specification (maximum)"
+    actual_thb_per_contract_per_side: Money | None = None
+    actual_status: FeeProvenanceStatus = FeeProvenanceStatus.UNKNOWN
+    actual_source: str | None = None
+
+    @model_validator(mode="after")
+    def _actual_is_supported(self) -> Self:
+        if self.actual_status is FeeProvenanceStatus.VERIFIED_EXCHANGE_CAP:
+            raise ValueError(
+                "actual_status may not be VERIFIED_EXCHANGE_CAP: a cap is not an actual "
+                "charged fee. Leave actual_* unset until the broker's rate is verified."
+            )
+        if self.actual_status is not FeeProvenanceStatus.UNKNOWN and (
+            self.actual_thb_per_contract_per_side is None
+        ):
+            raise ValueError(
+                f"actual_status {self.actual_status} claims knowledge but no "
+                f"actual_thb_per_contract_per_side was configured"
+            )
+        return self
+
+
+class CommissionConfig(_Frozen):
+    """Broker commission. Negotiable per account, therefore unknown until configured."""
+
+    thb_per_contract_per_side: Money | None = None
+    status: FeeProvenanceStatus = FeeProvenanceStatus.UNKNOWN
+    minimum_thb_per_order: Money | None = None
+    vat_percent: Money = Decimal("7")
+    source: str | None = None
+
+    @model_validator(mode="after")
+    def _value_supports_status(self) -> Self:
+        if self.status is FeeProvenanceStatus.VERIFIED_EXCHANGE_CAP:
+            raise ValueError("a broker commission cannot have exchange-cap provenance")
+        if self.status is not FeeProvenanceStatus.UNKNOWN and (
+            self.thb_per_contract_per_side is None
+        ):
+            raise ValueError(
+                f"commission status {self.status} claims knowledge but no rate was configured"
+            )
+        return self
+
+
+class CostsConfig(_Frozen):
+    """Section 23 cost model inputs, each carrying its own provenance."""
+
+    exchange_fee: ExchangeFeeConfig = ExchangeFeeConfig()
+    commission: CommissionConfig = CommissionConfig()
+    research_scenario: CostScenario = CostScenario.CONSERVATIVE_STRESS_TEST
+    """Which labelled scenario research runs use by default. The conservative stress test is
+    the only place the exchange cap may legitimately be applied."""
+
+
 class MarginConfig(_Frozen):
     """Section 22. The rates themselves are dynamic and live in the margin provider (TFEX-4)."""
 
@@ -267,6 +333,7 @@ class TfexConfig(_Frozen):
     sessions: SessionsConfig
     expiry: ExpiryConfig = ExpiryConfig()
     roll: RollConfig = RollConfig()
+    costs: CostsConfig = CostsConfig()
     margin: MarginConfig = MarginConfig()
     metadata: MetadataConfig = MetadataConfig()
     time_bucket_statistics: TimeBucketStatisticsConfig = TimeBucketStatisticsConfig()

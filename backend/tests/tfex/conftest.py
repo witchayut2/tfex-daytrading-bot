@@ -140,3 +140,32 @@ def registry(
 def bkk(day: date, at: time) -> datetime:
     """Asia/Bangkok-aware datetime helper."""
     return datetime.combine(day, at, tzinfo=BANGKOK)
+
+
+#: Published dates matching what TFEX actually publishes for the December 2026 contract, so
+#: market-data tests exercise the EXCHANGE_PUBLISHED path rather than the derived fallback.
+FIXTURE_PUBLISHED_DATES = (
+    PublishedContractDates(
+        contract_year=2026,
+        contract_month=12,
+        first_trading_date=date(2025, 12, 29),
+        last_trading_date=date(2026, 12, 29),
+        note="S50Z26 fixture mirroring the exchange-published calendar",
+    ),
+)
+
+
+@pytest.fixture
+def published_calendar(config: TfexConfig) -> TradingCalendar:
+    """Calendar whose December 2026 expiry comes from a published contract date."""
+    return TradingCalendar(
+        config,
+        HolidayStore(
+            "/nonexistent-so-unloaded-years-raise",
+            preloaded=[
+                build_year(2025),
+                build_year(2026, published_contract_dates=FIXTURE_PUBLISHED_DATES),
+                build_year(2027),
+            ],
+        ),
+    )

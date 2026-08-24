@@ -25,14 +25,14 @@
         "first_trading_day",
         "last_trading_day"
       ],
-      "retrieval_date": null,
+      "retrieval_date": "2026-08-24T06:35:31.263492Z",
       "effective_date": null,
-      "fingerprint": null,
-      "last_verification_result": "NOT_VERIFIED",
-      "last_verification_at": null,
+      "fingerprint": "sha256:eac06e64c6180cf93f1cf7c41b0c3f42344563fc4e7124733c51ed949a6ad3b2",
+      "last_verification_result": "VERIFIED_OFFICIAL",
+      "last_verification_at": "2026-08-24T07:17:41.811192Z",
       "fallback_behavior": "Fall back to the derived last-trading-day rule and stamp the contract as DERIVED_RULE. Rejected when expiry.require_published_last_trading_day is true.",
       "refresh_interval_days": 30,
-      "note": null
+      "note": "6 listed S50 contracts; 4 had their published last trading day confirmed against the contract-specification rule using the imported holiday calendar. Not cross-checked (no holiday data for that year yet): ['S50H27', 'S50M27']."
     },
     {
       "name": "SET50 Index overview",
@@ -101,14 +101,14 @@
         "last_trading_day_rule",
         "settlement_method"
       ],
-      "retrieval_date": null,
+      "retrieval_date": "2026-08-24T07:17:42.392053Z",
       "effective_date": null,
-      "fingerprint": null,
-      "last_verification_result": "NOT_VERIFIED",
-      "last_verification_at": null,
+      "fingerprint": "sha256:a1bb009b81841fd2808d8b364d631facc18f4eb6e033347369f9febfefc94ace",
+      "last_verification_result": "CROSS_CHECKED",
+      "last_verification_at": "2026-08-24T07:17:41.811192Z",
       "fallback_behavior": "Use the checked-in contract configuration and mark contract metadata unverified. Order-capable modes reject.",
       "refresh_interval_days": 90,
-      "note": null
+      "note": "tick size and point value corroborated against the exchange series endpoint for S50Z26 ({'tickSize': '0.1', 'priceQuotationFactor': '200.0'}). The specification page itself was not retrieved, so fee, price-limit and settlement terms remain unverified."
     },
     {
       "name": "TFEX annual trading calendar",
@@ -117,14 +117,14 @@
         "trading_days",
         "shortened_sessions"
       ],
-      "retrieval_date": null,
+      "retrieval_date": "2026-08-24T06:32:03.839723Z",
       "effective_date": null,
       "fingerprint": null,
-      "last_verification_result": "NOT_VERIFIED",
-      "last_verification_at": null,
+      "last_verification_result": "CROSS_CHECKED",
+      "last_verification_at": "2026-08-24T07:17:41.811192Z",
       "fallback_behavior": "Calendar raises CalendarDataUnavailableError for unloaded years.",
       "refresh_interval_days": 30,
-      "note": null
+      "note": "Trading days are derived from the imported holiday calendar rather than from this page directly. Shortened sessions are NOT covered and remain unverified."
     },
     {
       "name": "TFEX holidays",
@@ -133,14 +133,14 @@
         "holiday_date",
         "holiday_name"
       ],
-      "retrieval_date": null,
+      "retrieval_date": "2026-08-24T06:32:03.839723Z",
       "effective_date": null,
-      "fingerprint": null,
-      "last_verification_result": "NOT_VERIFIED",
-      "last_verification_at": null,
+      "fingerprint": "sha256:895393b6896c9cd567b531d608c36cccb0495eeb8c7af6a601fc25ad6d18b11a",
+      "last_verification_result": "VERIFIED_OFFICIAL",
+      "last_verification_at": "2026-08-24T07:17:41.811192Z",
       "fallback_behavior": "Calendar raises CalendarDataUnavailableError for unloaded years.",
       "refresh_interval_days": 30,
-      "note": null
+      "note": "Imported for 2026 from the exchange's own holiday endpoint; English and Thai variants cross-checked; 20 holidays including 2 exchange special holiday(s)."
     },
     {
       "name": "TFEX margin announcements",

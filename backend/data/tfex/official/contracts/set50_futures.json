@@ -1,0 +1,93 @@
+{
+  "exchange": "TFEX",
+  "instrument": "SET50 Index Futures",
+  "instrument_id": "SET50_FC",
+  "market_list_id": "TXI_F",
+  "timezone": "Asia/Bangkok",
+  "contracts": [
+    {
+      "symbol": "S50Q26",
+      "contract_month": "2026-08",
+      "first_trading_day": "2026-05-28",
+      "last_trading_day": "2026-08-28",
+      "last_trading_time": "16:30:00",
+      "timezone": "Asia/Bangkok",
+      "published": true,
+      "derived_last_trading_day": "2026-08-28",
+      "derived_cross_check": true,
+      "derivation_note": "business day before the last business day of 2026-08 (last business day 2026-08-31)",
+      "status": "VERIFIED",
+      "source_id": "tfex-set50-futures-series"
+    },
+    {
+      "symbol": "S50U26",
+      "contract_month": "2026-09",
+      "first_trading_day": "2025-09-29",
+      "last_trading_day": "2026-09-29",
+      "last_trading_time": "16:30:00",
+      "timezone": "Asia/Bangkok",
+      "published": true,
+      "derived_last_trading_day": "2026-09-29",
+      "derived_cross_check": true,
+      "derivation_note": "business day before the last business day of 2026-09 (last business day 2026-09-30)",
+      "status": "VERIFIED",
+      "source_id": "tfex-set50-futures-series"
+    },
+    {
+      "symbol": "S50V26",
+      "contract_month": "2026-10",
+      "first_trading_day": "2026-07-30",
+      "last_trading_day": "2026-10-29",
+      "last_trading_time": "16:30:00",
+      "timezone": "Asia/Bangkok",
+      "published": true,
+      "derived_last_trading_day": "2026-10-29",
+      "derived_cross_check": true,
+      "derivation_note": "business day before the last business day of 2026-10 (last business day 2026-10-30)",
+      "status": "VERIFIED",
+      "source_id": "tfex-set50-futures-series"
+    },
+    {
+      "symbol": "S50Z26",
+      "contract_month": "2026-12",
+      "first_trading_day": "2025-12-29",
+      "last_trading_day": "2026-12-29",
+      "last_trading_time": "16:30:00",
+      "timezone": "Asia/Bangkok",
+      "published": true,
+      "derived_last_trading_day": "2026-12-29",
+      "derived_cross_check": true,
+      "derivation_note": "business day before the last business day of 2026-12 (last business day 2026-12-30)",
+      "status": "VERIFIED",
+      "source_id": "tfex-set50-futures-series"
+    },
+    {
+      "symbol": "S50H27",
+      "contract_month": "2027-03",
+      "first_trading_day": "2026-03-30",
+      "last_trading_day": "2027-03-30",
+      "last_trading_time": "16:30:00",
+      "timezone": "Asia/Bangkok",
+      "published": true,
+      "derived_last_trading_day": null,
+      "derived_cross_check": false,
+      "derivation_note": "cannot derive: official TFEX calendar data for 2027 has not been imported (expected C:\\apps7 tfex\\TFEX_ClaudeCode_Starter\\backend\\data\\tfex\\holidays\\2027.json). Import it before any date-sensitive operation; see data/tfex/holidays/README.md.",
+      "status": "PUBLISHED_UNVERIFIED",
+      "source_id": "tfex-set50-futures-series"
+    },
+    {
+      "symbol": "S50M27",
+      "contract_month": "2027-06",
+      "first_trading_day": "2026-06-29",
+      "last_trading_day": "2027-06-29",
+      "last_trading_time": "16:30:00",
+      "timezone": "Asia/Bangkok",
+      "published": true,
+      "derived_last_trading_day": null,
+      "derived_cross_check": false,
+      "derivation_note": "cannot derive: official TFEX calendar data for 2027 has not been imported (expected C:\\apps7 tfex\\TFEX_ClaudeCode_Starter\\backend\\data\\tfex\\holidays\\2027.json). Import it before any date-sensitive operation; see data/tfex/holidays/README.md.",
+      "status": "PUBLISHED_UNVERIFIED",
+      "source_id": "tfex-set50-futures-series"
+    }
+  ]
+}

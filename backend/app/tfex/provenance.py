@@ -39,17 +39,53 @@ __all__ = [
 
 
 class VerificationResult(StrEnum):
-    """Outcome of the most recent check of a source against its live URL."""
+    """How far a source has actually been checked.
+
+    Verification is a ladder, not a boolean, and it is per source and per fact. Retrieving a
+    page proves it exists; parsing it proves the platform understood it; cross-checking it
+    against an independent computation proves the understanding is right. Only the top two
+    rungs count as verified, so "we fetched it" can never be mistaken for "we confirmed it".
+    """
 
     NOT_VERIFIED = "NOT_VERIFIED"
-    """Never checked. The default, and the honest state for a freshly seeded registry."""
+    """Never checked. The honest default for a freshly seeded registry."""
 
-    VERIFIED_UNCHANGED = "VERIFIED_UNCHANGED"
-    VERIFIED_CHANGED = "VERIFIED_CHANGED"
-    """Fetched successfully but the fingerprint moved: consumers must re-import."""
+    RETRIEVED = "RETRIEVED"
+    """Fetched successfully. The content has not been interpreted."""
 
-    UNREACHABLE = "UNREACHABLE"
-    INVALID = "INVALID"
+    PARSED = "PARSED"
+    """Fetched and parsed into the platform's model. Not yet corroborated."""
+
+    CROSS_CHECKED = "CROSS_CHECKED"
+    """Parsed and agreed with an independent computation or a second source."""
+
+    VERIFIED_OFFICIAL = "VERIFIED_OFFICIAL"
+    """Retrieved from the authoritative source and cross-checked. The strongest claim."""
+
+    STALE = "STALE"
+    """Was verified once, but is now past its freshness window."""
+
+    CONFLICT = "CONFLICT"
+    """Two sources, or a source and a derived rule, disagree. Blocks dependent processing."""
+
+    UNAVAILABLE = "UNAVAILABLE"
+    """Could not be retrieved."""
+
+
+#: Results that mean the source was successfully fetched.
+_RETRIEVED_RESULTS = frozenset(
+    {
+        VerificationResult.RETRIEVED,
+        VerificationResult.PARSED,
+        VerificationResult.CROSS_CHECKED,
+        VerificationResult.VERIFIED_OFFICIAL,
+    }
+)
+
+#: Results that mean the *content* was confirmed, not merely downloaded.
+_VERIFIED_RESULTS = frozenset(
+    {VerificationResult.CROSS_CHECKED, VerificationResult.VERIFIED_OFFICIAL}
+)
 
 
 def content_fingerprint(content: bytes | str) -> str:
@@ -161,10 +197,12 @@ class SourceRecord(BaseModel):
 
     @property
     def is_verified(self) -> bool:
-        return self.last_verification_result in {
-            VerificationResult.VERIFIED_UNCHANGED,
-            VerificationResult.VERIFIED_CHANGED,
-        }
+        """Only the top two rungs count. Retrieved and parsed are progress, not proof."""
+        return self.last_verification_result in _VERIFIED_RESULTS
+
+    @property
+    def is_retrieved(self) -> bool:
+        return self.last_verification_result in _RETRIEVED_RESULTS
 
     def to_provenance(self) -> Provenance:
         return Provenance(
@@ -318,8 +356,15 @@ class OfficialSourceRegistry:
         at: datetime,
         fingerprint: str | None = None,
         effective_date: date | None = None,
+        retrieved_at: datetime | None = None,
+        note: str | None = None,
     ) -> SourceRecord:
-        """Stamp the outcome of a refresh job onto a source."""
+        """Stamp the outcome of a refresh job onto a source.
+
+        ``retrieved_at`` defaults to ``at``, but an importer replaying a stored capture
+        should pass the time the bytes were actually fetched — that is what the freshness
+        window is measured from.
+        """
         if at.tzinfo is None:
             raise SourceRegistryError("verification timestamp must be timezone-aware")
         current = self.get(name)
@@ -327,12 +372,14 @@ class OfficialSourceRegistry:
             "last_verification_result": result,
             "last_verification_at": at,
         }
-        if result in {VerificationResult.VERIFIED_UNCHANGED, VerificationResult.VERIFIED_CHANGED}:
-            updates["retrieval_date"] = at
+        if result in _RETRIEVED_RESULTS:
+            updates["retrieval_date"] = retrieved_at or at
             if fingerprint is not None:
                 updates["fingerprint"] = fingerprint
             if effective_date is not None:
                 updates["effective_date"] = effective_date
+        if note is not None:
+            updates["note"] = note
         updated = current.model_copy(update=updates)
         self.upsert(updated)
         return updated
@@ -398,7 +445,8 @@ class OfficialSourceRegistry:
             "# TFEX Official Sources",
             "",
             "<!-- GENERATED FILE - do not edit by hand.",
-            "     Regenerate with: uv run python scripts/render_official_sources.py -->",
+            "     Statuses are derived from the captures under backend/data/tfex/official/.",
+            "     Regenerate with: uv run python scripts/update_source_verification.py -->",
             "",
             f"Generated: {stamp}",
             "",

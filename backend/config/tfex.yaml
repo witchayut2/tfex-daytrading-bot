@@ -21,7 +21,26 @@ contract: # [EXCHANGE] SET50 Index Futures contract specification
   settlement_type: CASH
   price_limit_reference: LATEST_SETTLEMENT
   price_limit_percent: 30
-  max_exchange_fee_thb_per_contract_per_side: 7
+
+costs:
+  # The specification publishes THB 7 per contract per side as a MAXIMUM. It is a cap, not
+  # the amount charged, and the code refuses to deduct it as a production cost.
+  exchange_fee:
+    cap_thb_per_contract_per_side: 7
+    cap_source: "SET50 Index Futures contract specification (maximum)"
+    # Leave unset until a broker statement or agreement is verified for this account.
+    actual_thb_per_contract_per_side: null
+    actual_status: UNKNOWN
+    actual_source: null
+  commission:
+    # [BROKER] negotiable per account. Unknown until configured from a real agreement.
+    thb_per_contract_per_side: null
+    status: UNKNOWN
+    minimum_thb_per_order: null
+    vat_percent: 7
+    source: null
+  # [RESEARCH] the only scenario in which the exchange cap may legitimately be applied.
+  research_scenario: CONSERVATIVE_STRESS_TEST
 
 symbol:
   root: S50

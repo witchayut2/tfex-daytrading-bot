@@ -20,6 +20,25 @@ class ConfigurationError(TfexError):
     """The TFEX configuration is missing, malformed, or internally inconsistent."""
 
 
+class RealMarketDataValidationRequired(TfexError):
+    """A milestone was declared complete on synthetic data alone.
+
+    Fixtures prove the code does what its author expected. Only real SET50 futures data
+    proves it survives quiet minutes, feed gaps, off-tick prints and the holidays nobody
+    remembered.
+    """
+
+
+class FeeSemanticsError(TfexError):
+    """A cost figure was used as something it is not.
+
+    The specific case this exists for: the exchange fee published in the SET50 Index Futures
+    contract specification is a **maximum** ("Maximum of THB 7 per contract per side"), not
+    the amount actually charged. Deducting a cap from P&L as if it were an actual charge
+    silently misstates every result, so the cap physically refuses to be used that way.
+    """
+
+
 class LiveTradingDisabledError(TfexError):
     """Something attempted to enable a real-money order route.
 

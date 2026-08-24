@@ -21,7 +21,8 @@ from app.tfex.provenance import OfficialSourceRegistry
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_ROOT.parent
 DOC_PATH = REPO_ROOT / "docs" / "tfex_official_sources.md"
-STATE_PATH = BACKEND_ROOT / "data" / "tfex" / "official_sources.json"
+STATE_PATH = BACKEND_ROOT / "data" / "tfex" / "official" / "source_registry.json"
+"""Shared with scripts/update_source_verification.py, which is what writes the statuses."""
 
 
 def main() -> int:

@@ -1,0 +1,7 @@
+# Normalize line endings in the object database so file checksums are stable across
+# machines. Reproducible replay depends on reproducible inputs, and that starts here.
+* text=auto eol=lf
+
+# Immutable raw source captures: never touch these, ever. Their SHA-256 is provenance.
+backend/data/tfex/official/**/raw.* -text
+backend/data/tfex/historical/raw/** -text -diff

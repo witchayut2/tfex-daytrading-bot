@@ -1,0 +1,30 @@
+{
+  "source_id": "tfex-set50-futures-series",
+  "authority": "Thailand Futures Exchange",
+  "source_type": "OFFICIAL_EXCHANGE",
+  "source_title": "SET50 Index Futures series / trading calendar",
+  "status": "VERIFIED_OFFICIAL",
+  "verification_basis": "published first/last trading dates retrieved from the exchange series endpoint, each cross-checked against the contract-specification rule using the imported official holiday calendar",
+  "retrieved_at": "2026-08-24T07:24:57.755776+00:00",
+  "stale_after": "2027-02-20T07:24:57.755776+00:00",
+  "parser_version": "tfex-series-parser/1",
+  "importer_version": "import_tfex_contracts/1",
+  "contract_count": 6,
+  "verified_count": 4,
+  "conflict_symbols": [],
+  "published_unverified_symbols": [
+    "S50H27",
+    "S50M27"
+  ],
+  "request": {
+    "url": "https://www.tfex.co.th/api/set/tfex/series/list",
+    "http_status": 200,
+    "content_type": "application/json",
+    "content_length": 288060,
+    "sha256": "eac06e64c6180cf93f1cf7c41b0c3f42344563fc4e7124733c51ed949a6ad3b2",
+    "retrieved_at": "2026-08-24T07:24:57.755776+00:00"
+  },
+  "human_page": "https://www.tfex.co.th/en/products/equity/set50-index-futures/trading-calendar",
+  "specification_page": "https://www.tfex.co.th/en/products/equity/set50-index-futures/contract-specification",
+  "notes": "set50_futures_raw.json is an immutable capture; its SHA-256 is recorded above. CONFLICT means the published date and the derived rule disagree and expiry-dependent processing must stop until it is resolved."
+}
