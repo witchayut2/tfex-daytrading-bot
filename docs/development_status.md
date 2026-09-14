@@ -1,7 +1,7 @@
 # Development Status
 
 Last updated: **2026-09-14**
-Current status label: **TFEX-2 complete; TFEX-3 not started — not yet a trading system**
+Current status label: **TFEX-2 and TFEX-3 complete — not yet a trading system**
 
 > Not ready for real money. `CLAUDE_TFEX.md` section 32 lists sixteen gates before real
 > orders may even be considered; none are met, and no broker order route exists in this build.
@@ -16,7 +16,7 @@ Current status label: **TFEX-2 complete; TFEX-3 not started — not yet a tradin
 | **TFEX-1** | Configuration, official-source registry, symbol parser, contract registry, trading calendar, holiday import, last-trading-day model, session state engine, tests | ✅ Complete, and now running on **real imported exchange data** |
 | **Data-readiness gate** | Baseline preservation, real calendar import, fee semantics, market-data validator, acceptance gate, source research | ✅ **`READY_FOR_TFEX2`** — five-day real-data, validation, checksum, and lineage evidence passed (`docs/tfex_data_readiness_gate.md`) |
 | **TFEX-2** | TFEX-aligned replay: CSV import, 1m/5m/15m aggregation, midday break, session snapshots, VWAP, opening ranges, gap engine | ✅ **Complete — real five-day replay and all mandatory acceptance checks pass.** Status `TFEX2_COMPLETE` |
-| TFEX-3 | Analysis: pivots, structure, BOS, CHoCH, liquidity map, sweeps, FVG, order blocks, regime | ⬜ Not started |
+| **TFEX-3** | Analysis: pivots, structure, BOS, CHoCH, liquidity map, sweeps, FVG, order blocks, regime | ✅ **Complete.** Status `TFEX3_COMPLETE`; numeric calibration remains future research |
 | TFEX-4 | Strategies A and B, scoring, sizing, margin/expiry/session gates, kill switch | ⬜ Not started — dormant risk contract/unit scaffold only |
 | TFEX-5 | Paper execution: broker, order state machine, costs, next-bar fills, P&L, EOD flatten | ⬜ Not started — dormant state contract/unit scaffold only |
 | TFEX-6 | Visual dashboard | ⬜ Not started |
@@ -26,12 +26,13 @@ Current status label: **TFEX-2 complete; TFEX-3 not started — not yet a tradin
 
 | Command | Result |
 | --- | --- |
-| `uv run pytest tests/tfex` | **530 passed, 1 skipped** |
-| `uv run pytest -m anti_repaint` | **31 passed, 500 deselected** |
-| `uv run pytest -m real_market_data` | **34 passed, 497 deselected** — validator plus TFEX-2 replay acceptance on parent and five-day child |
+| `uv run pytest tests/tfex/test_tfex3_definition_lock.py tests/tfex/test_tfex3_structure.py` | **36 passed** |
+| `uv run pytest tests/tfex` | **570 passed, 1 skipped** |
+| `uv run pytest -m anti_repaint` | **56 passed, 515 deselected** |
+| `uv run pytest -m real_market_data` | **38 passed, 533 deselected** — validator, TFEX-2, and causal TFEX-3 acceptance on parent and five-day child |
 | `uv run ruff check .` | All checks passed |
-| `uv run ruff format --check .` | 113 files already formatted |
-| `uv run mypy .` | Success — 110 source files |
+| `uv run ruff format --check .` | 125 files already formatted |
+| `uv run mypy .` | Success — 122 source files |
 | `scripts/validate_calendar_data.py --year 2026` | PASS — all 9 proofs |
 | `scripts/import_tfex_contracts.py` | 6 contracts, **0 conflicts** |
 | Frontend | Not applicable until TFEX-6 |
@@ -75,9 +76,12 @@ strategy can advance beyond `RESEARCH_ONLY`.
 
 ## Completed boundary and outstanding work
 
-1. **TFEX-3 remains not started and requires separate authorization.** TFEX-2 produces
-   deterministic market state only; it contains no strategy, risk-runtime, broker, or order
-   path. See `docs/tfex2_acceptance.md` and `docs/tfex_candle_alignment.md`.
+1. **TFEX-3 is complete under explicit authorization.** The locked neutral layer includes
+   causal pivots/structure/BOS/CHoCH, deterministic Order Blocks, liquidity levels/sweeps
+   and unweighted importance features, FVGs, and structure x volatility regimes. Numeric
+   volatility calibration and total ranking remain future declared research. TFEX-4 and
+   strategy research have not started. See `docs/tfex3_definition_lock.md` and
+   `docs/tfex3_acceptance.md`.
 2. **Import the 2027 holiday calendar** when TFEX publishes it. The endpoint serves only the
    current display year; 2025 and 2027 return HTTP 401 today. Until 2027 lands, S50H27 and
    S50M27 have no cross-checked expiry and anything reaching into 2027 fails closed.
@@ -101,8 +105,12 @@ strategy can advance beyond `RESEARCH_ONLY`.
 - **Risk limits are intentionally uncalibrated.** The future policy needs research-backed
   values for per-trade/daily loss, consecutive-loss, contract, RRR, slippage, and execution
   error limits before paper-strategy work can use it.
-- Repaint risks R1–R9, R11, R12 from the audit remain open where they belong to later
-  milestones. R10 (roll rewriting history) is structurally addressed.
+- **TFEX-3 numeric research remains uncalibrated by design.** Volatility cutoffs, nonzero
+  confluence tolerance, and a total liquidity source/weight ranking require declared
+  calibration evidence. Neutral infrastructure fails closed or stays partially ordered.
+- Audit repaint risks R1–R7 and R10–R12 now have structural/behavioral coverage in their
+  implemented layers. R8 (same-bar fills) and R9 (retroactive margin) remain future runtime
+  concerns; their dormant contracts do not activate execution.
 
 ## Definition of done (section 34) — progress
 
@@ -111,14 +119,16 @@ now on real data · expiry and last-trading-day logic, cross-checked against the
 raw contract symbols preserved · contract roll deterministic and audited · TFEX-aligned
 1m/5m/15m candle construction and midday-break isolation · full-day/session VWAP ·
 morning/afternoon opening ranges · causal gap engine · deterministic replay and current
-anti-repaint suites · backend tests, lint and type checks pass · no real broker order route
-enabled.
+anti-repaint suites · causal pivots/swing labels/BOS/CHoCH · deterministic Order Blocks ·
+confirmed liquidity levels/reclaimed sweeps and importance features · causal three-candle
+FVGs · closed-15m structure and fail-closed volatility regimes · backend tests, lint and
+type checks pass · no real broker order route enabled.
 
 **Design locked but not runtime-complete:** proposal/risk/approved-plan boundary · stop-based
 THB sizing · no-widening stops · protected partial fills · deterministic kill and recovery
 states · EOD/no-overnight contract.
 
-**Not met:** non-repainting liquidity levels · strategy signals · runtime position sizing ·
-margin gate · paper execution transport/semantics · runtime EOD and expiry-day flattening ·
-anti-repaint coverage for future strategy/execution milestones · frontend · Playwright
-end-to-end tests.
+**Not met:** calibrated strategy/regime thresholds · researched liquidity total ranking ·
+strategy signals · runtime position sizing · margin gate · paper execution
+transport/semantics · runtime EOD and expiry-day flattening · anti-repaint coverage for
+future strategy/execution milestones · frontend · Playwright end-to-end tests.

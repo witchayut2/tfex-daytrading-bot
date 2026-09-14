@@ -4,8 +4,9 @@ Backend for the TFEX SET50 Index Futures research and paper-trading platform.
 Specification: `../CLAUDE.md` and `../CLAUDE_TFEX.md`. Architecture: `../docs/tfex_architecture.md`.
 Current gate decision: `../docs/tfex_data_readiness_gate.md` —
 **`READY_FOR_TFEX2`**. Five complete real S50U26 1-minute days are validated with checksum
-lineage. TFEX-2 deterministic replay and causal market-state acceptance are complete;
-TFEX-3 is not started.
+lineage. TFEX-2 deterministic replay/market state and TFEX-3 deterministic neutral analysis
+are complete; locked definitions and evidence are documented in
+`../docs/tfex3_definition_lock.md` and `../docs/tfex3_acceptance.md`.
 
 **Paper trading only.** There is no live order route, and `config/tfex.yaml` cannot enable one.
 

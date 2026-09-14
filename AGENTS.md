@@ -20,6 +20,7 @@ Before editing anything:
    - `docs/tfex_historical_data_sources.md`
    - `docs/tfex_candle_alignment.md`
    - `docs/tfex2_acceptance.md`
+   - `docs/tfex3_acceptance.md` if present
    - `docs/baseline_manifest.md`
    - `docs/CODEX_HANDOFF.md` if present
 5. Run:
@@ -43,18 +44,23 @@ The repository itself is the final source of truth if it differs from this hando
 - The minimum of five complete trading days is met. The current gate is
   `READY_FOR_TFEX2`.
 - TFEX-2 deterministic raw-contract replay and causal market state are complete and tested
-  against the five-day real S50U26 dataset. TFEX-3 remains `NOT STARTED`.
+  against the five-day real S50U26 dataset.
+- TFEX-3 neutral analysis is `TFEX3_COMPLETE`: causal pivots, swing structure, BOS/CHoCH,
+  deterministic Order Blocks, liquidity levels/sweeps/importance features, FVGs, and
+  structure/volatility regime infrastructure are implemented and tested. Volatility
+  thresholds and total liquidity-ranking policy remain intentionally `UNCALIBRATED` for
+  later declared research; no strategy has started.
 - Future risk/order/position and strategy-research protocols are locked as dormant,
   fail-closed contracts. They do not start TFEX-2, TFEX-4, or TFEX-5.
 - Licensed historical data and operator-specific capability evidence remain outside Git.
 
 Latest verified QA:
-- `uv run pytest tests/tfex` -> 530 passed, 1 skipped
-- `uv run pytest -m anti_repaint` -> 31 passed, 500 deselected
-- `uv run pytest -m real_market_data` -> 34 passed, 497 deselected
+- `uv run pytest tests/tfex` -> 570 passed, 1 skipped
+- `uv run pytest -m anti_repaint` -> 56 passed, 515 deselected
+- `uv run pytest -m real_market_data` -> 38 passed, 533 deselected
 - `uv run ruff check .` -> PASS
-- `uv run ruff format --check .` -> PASS, 113 files
-- `uv run mypy .` -> PASS, 110 source files
+- `uv run ruff format --check .` -> PASS, 125 files
+- `uv run mypy .` -> PASS, 122 source files
 
 TFEX-2 must NEVER be marked complete from synthetic fixtures alone.
 
@@ -83,8 +89,9 @@ User has:
 - App ID and Secret held by the user
 
 Current engineering boundary:
-the data-readiness gate and TFEX-2 are complete. TFEX-3 analysis may begin only in a
-separate, explicitly authorized task; no strategy, execution, or live-order work is active.
+the data-readiness gate, TFEX-2, and TFEX-3 neutral analysis are complete. Numeric regime
+calibration, liquidity-ranking research, strategies, execution, and live-order work have
+not started.
 
 ## 6. Secret handling — critical
 Never print, log, echo, persist, commit, paste into docs, or expose:

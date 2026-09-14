@@ -346,7 +346,9 @@ Intentionally not implemented:
 - broker/PaperBroker adapter, order transport, idempotency, or reconciliation transport
 - real/live order submission, modification, or cancellation
 - calibrated numerical policy
-- TFEX-2 replay/aggregation
+
+TFEX-2 replay/aggregation now exists elsewhere in the repository; this dormant risk
+contract remains intentionally unwired to it.
 
 Before activation in future milestones, paper execution must add idempotent broker order
 IDs, duplicate prevention, cancel/replace acknowledgements, restart persistence, and

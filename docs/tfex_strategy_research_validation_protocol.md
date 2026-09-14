@@ -11,8 +11,8 @@ Read this with `CLAUDE.md`, `CLAUDE_TFEX.md`, `docs/tfex_architecture.md`,
 `docs/tfex_data_readiness_gate.md`, and
 `docs/tfex_risk_order_position_contract.md`. The current real S50U26 1-minute dataset
 contains five complete trading days and satisfies the data-readiness gate. Current decision:
-`READY_FOR_TFEX2`. TFEX-2 is complete; TFEX-3 strategy analysis remains not started and
-requires separate authorization.
+`READY_FOR_TFEX2`. TFEX-2 and TFEX-3 neutral market analysis are complete, but no strategy
+analysis or parameter research has started.
 
 ## 1. What is locked, and what is not implemented
 
@@ -32,9 +32,10 @@ The repository now has immutable schemas and pure validation operations for:
 - historical, forward, paper, and operational evidence distinctions; and
 - fail-closed strategy-acceptance states.
 
-There is still no candle replay engine, indicator engine, strategy logic, optimizer,
-parameter selection, ranking score, fill simulator, broker adapter, execution transport,
-or runtime activation. Numerical performance and risk thresholds remain
+This protocol itself contains no replay or indicator engine. Elsewhere, TFEX-2 replay and
+TFEX-3 neutral analysis exist; there is still no strategy logic, optimizer, parameter
+selection, total ranking score, fill simulator, broker adapter, execution
+transport, or runtime activation. Numerical performance and risk thresholds remain
 `UNCALIBRATED`.
 
 ## 2. Evidence lifecycle
@@ -138,9 +139,9 @@ The following are prohibited:
 - any replay result that changes when only future input is mutated.
 
 Allowed normalization scopes are expanding past-only or calibration-window-only. Confirmed
-history is append-only by artifact ID and content checksum. Future TFEX-2/TFEX-3 code must
-still prove prefix stability, replay-versus-incremental equivalence, and no future-index
-access; these contracts do not substitute for behavioral anti-repaint tests.
+history is append-only by artifact ID and content checksum. TFEX-2/TFEX-3 code must prove
+prefix stability, replay-versus-incremental equivalence, and no future-index access; these
+contracts do not substitute for behavioral anti-repaint tests.
 
 ## 6. Execution model contract
 

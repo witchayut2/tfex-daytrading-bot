@@ -53,4 +53,5 @@ uv run mypy .                      Success - 110 source files
 ```
 
 The one skip is the existing optional installed Settrade SDK signature check. TFEX-2 is
-complete; TFEX-3 remains not started and requires separate authorization.
+complete. TFEX-3 later completed under separate authorization as `TFEX3_COMPLETE`; this
+does not alter TFEX-2 acceptance or the historical verification counts above.

@@ -5,7 +5,10 @@ sessions, validation, and deterministic raw-contract replay/market state are imp
 Five complete S50U26 1-minute days are real-data validated and replayed with checksum and
 parent-lineage evidence; the data gate remains `READY_FOR_TFEX2`. Dormant risk, order, and
 position-management contracts and the research-validation protocol remain locked for future
-milestones. TFEX-3 strategies, optimization, execution, and live trading have not started.
+milestones. TFEX-3 deterministic neutral analysis is `TFEX3_COMPLETE`: pivots, structure,
+BOS/CHoCH, Order Blocks, liquidity/sweeps/importance features, FVGs, and layered regime
+infrastructure are implemented. Numeric calibration and total ranking remain future
+research. Strategies, optimization, execution, and live trading have not started.
 Licensed historical data and operator-specific capability evidence stay local and ignored;
 their universal SDK/API conclusions are captured in tests and canonical readiness docs.
 
@@ -70,9 +73,12 @@ sessions/ ......... phases for a date -> session state -> entry/exit gates
       │
 marketdata/ ....... bars -> validation -> replay -> causal 5m/15m/VWAP market state
       │
+analysis/ +
+liquidity/ ........ confirmed bars -> pivots -> structure -> neutral levels/events
+      │
 risk/ contracts ... dormant proposal -> risk -> protected-position specifications
       │
-(TFEX-3+) structure, strategies, broker runtime, dashboard
+(TFEX-4+) strategies, broker runtime, dashboard
 ```
 
 `config.py` imports `costs/models.py` for its two provenance enums, so `costs/__init__.py`
@@ -145,6 +151,18 @@ know it), and a strategy may only read values whose `confirmed_at` has passed.
 | `marketdata/replay.py` | One-event cursor, deterministic restart/seek, derived-state orchestration, and replay digest. |
 | `feeds/base.py` | Immutable closed-bar market event and replay status types. |
 | `feeds/csv_feed.py` | Manifest/checksum-aware one-minute CSV replay input. |
+| `analysis/models.py` | Closed causal 1m/5m/15m input with raw symbol and explicit event/confirmation times. |
+| `analysis/pivots.py` | Explicit-strength strict-extrema pivots with delayed confirmation. |
+| `analysis/structure.py` | HH/HL/LH/LL/equality labels, neutral bias, and close-confirmed BOS/CHoCH. |
+| `analysis/fvg.py` | Contiguous three-closed-candle FVG formation and immutable lifecycle revisions. |
+| `analysis/order_blocks.py` | One-or-zero BOS-anchored last-opposite-candle zones and causal lifecycle revisions. |
+| `analysis/regime.py` | Closed-15m structure mapping plus provenance-bearing, fail-closed volatility classification. |
+| `analysis/engine.py` | Incremental TFEX-3 orchestration, restart, real-data identity, and stable digest. |
+| `liquidity/levels.py` | Confirmed raw-symbol pivot/equality/session/opening-range liquidity levels. |
+| `liquidity/session_levels.py` | Converts only finalized TFEX-2 profiles/ranges into liquidity sources. |
+| `liquidity/sweep.py` | Neutral touch/exceed/reclaim/invalidation semantics. |
+| `liquidity/engine.py` | Immutable level revisions plus append-only interaction and sweep histories. |
+| `liquidity/importance.py` | Causal feature vectors, exact/configured confluence, and non-magic partial ordering. |
 
 The risk package now also contains **dormant architecture/test scaffolding**, not a started
 TFEX-4/TFEX-5 runtime:
@@ -165,8 +183,10 @@ strategy milestone. `docs/tfex_strategy_research_validation_protocol.md` is cano
 | `research/models.py` | Chronological partitions, one-use holdout, walk-forward folds, causal information, costs, metrics, trial registry, execution evidence, and acceptance states. |
 | `research/protocol.py` | Pure append-only and fail-closed validation operations. |
 
-TFEX-3 and later runtime modules remain placeholders. TFEX-2 introduced no strategy,
-broker, risk-runtime, or order-transport implementation.
+TFEX-3 is complete as neutral market analysis under `docs/tfex3_definition_lock.md` and its
+acceptance matrix. Numeric volatility calibration and total liquidity-ranking policy remain
+future declared research, not hidden defaults or missing neutral infrastructure. Neither
+TFEX-2 nor TFEX-3 introduces a strategy, broker, risk-runtime, or order transport.
 
 ## 5. Decisions the specification left open
 
@@ -192,6 +212,10 @@ broker, risk-runtime, or order-transport implementation.
 | D18 | What happens to a partial fill? | Every filled contract immediately carries matching planned/pending/active protection; partial exits reduce protective quantity atomically. | Local state may never represent unprotected filled exposure. |
 | D19 | What does a kill switch do to open positions? | It always blocks new entries, preserves existing protection, and separately requests flattening when executable. | Disabling entries must not cancel the only protection on existing risk. |
 | D20 | What risk values ship by default? | All numerical thresholds are `null` and `UNCALIBRATED`; a complete set may be labelled `RESEARCH_ONLY`, never production-ready. | No arbitrary number should acquire authority merely by being a code default. |
+| D21 | When does a swing pivot exist? | The caller supplies a versioned left/right strength. A wick must be a strict extremum against every configured neighbour, and the pivot confirms only when the final right bar closes. The acceptance run explicitly uses 2x2; the public engine has no hidden default. | Delayed confirmation makes mathematical lookahead observable without leaking it backward. |
+| D22 | What breaks structure? | A closed bar strictly beyond the latest already-confirmed same-timeframe pivot. Wicks do not create BOS/CHoCH. A break against established bullish/bearish structure is CHoCH; other confirmed breaks are BOS. | The rule is objective, reproducible, and exposes both event and knowledge time. |
+| D23 | What is an equal high/low? | Exact price equality between consecutive confirmed same-type pivots. No undocumented tolerance exists. | Any tolerance would be a research parameter and cannot be guessed. |
+| D24 | How are the final TFEX-3 ambiguities resolved? | `docs/tfex3_definition_lock.md`: BOS-anchored last-opposite-candle Order Blocks; closed-15m structure x externally calibrated volatility; liquidity feature vectors and a partial order; exact confluence by default. | Deterministic neutral infrastructure is lockable without inventing numeric thresholds, source weights, or trading alpha. |
 
 ## 6. What the platform refuses to ship
 
@@ -218,14 +242,15 @@ broker, risk-runtime, or order-transport implementation.
 
 ## 7. Testing
 
-531 tests under `backend/tests/tfex/` (530 passed, 1 optional installed-SDK signature check
+571 tests under `backend/tests/tfex/` (570 passed, 1 optional installed-SDK signature check
 skipped). Two markers:
 
 - `anti_repaint` — encodes a non-repainting invariant, so the suite section 31 requires can
   be run on its own.
 - `real_market_data` — runs validation and TFEX-2 replay acceptance against both the
-  non-synthetic four-day parent and five-day extended dataset. Thirty-four tests pass; only
-  the child can satisfy the minimum-history completion guard.
+  non-synthetic four-day parent and five-day extended dataset, plus causal TFEX-3 structure
+  checks. Thirty-eight tests pass; only the child can satisfy the minimum-history completion
+  guard. The anti-repaint subset contains 56 passing tests.
 
 Calendar fixtures use **invented** holiday dates, chosen to exercise the awkward cases: a
 holiday on the last calendar day of a month (June), a holiday sitting between the last two
@@ -252,4 +277,19 @@ in `docs/tfex_candle_alignment.md`; requirement evidence is in `docs/tfex2_accep
 confirmed 5m bars, and 120 confirmed 15m bars with deterministic replay digest
 `413e6430720ed94ad4e2ae7c283d60fd6eb32f555cb75b2b181d7ddb9aa121e6`.
 The data gate remains `READY_FOR_TFEX2`; the four-day parent and licensed data remain
-untouched and ignored. TFEX-3 is not started and requires separate authorization.
+untouched and ignored. TFEX-3 later began under separate authorization; its status is
+recorded independently below.
+
+## 10. Milestone TFEX-3 — complete
+
+The analysis consumes only immutable TFEX-2 frames and confirmed 5m/15m bars. It provides
+delayed strict-extrema pivots, swing classifications, close-confirmed BOS/CHoCH,
+BOS-anchored deterministic Order Blocks, confirmed liquidity and reclaimed sweeps, causal
+FVGs, closed-15m structure regimes, fail-closed volatility states, and unweighted liquidity
+importance features. Batch/incremental processing, prefixes, restart, future mutation, and
+the five-day real S50U26 run are deterministic.
+
+**`TFEX3_COMPLETE`.** The real run emitted 70 Order Blocks and deterministic analysis digest
+`cb6bb31d9a4a812f57b8b97c7eab20d8c7f25f46473144fd71444a3e5f74ee8b`.
+All volatility frames correctly remain `UNCALIBRATED` because no research threshold was
+supplied. No strategy or trade direction is emitted; TFEX-4 remains not started.
