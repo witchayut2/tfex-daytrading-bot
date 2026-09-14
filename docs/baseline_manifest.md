@@ -14,11 +14,11 @@ is configured locally, and status commit `fb7cdc2` was HEAD before this readines
 re-evaluation. The index and working tree were clean at the start of this task. Post-baseline
 data-readiness, dormant risk, and research-protocol work is preserved in later commits.
 
-The latest verified state has 499 TFEX tests passing with 1 optional SDK check skipped,
-22 anti-repaint tests passing, and 20 real-market-data tests passing across the immutable
-four-day parent and five-day extended dataset. Ruff is clean across 108 files and strict
-mypy succeeds over 105 source files. Canonical current status and QA live in
-`docs/development_status.md`.
+The latest verified state has 530 TFEX tests passing with 1 optional SDK check skipped,
+31 anti-repaint tests passing, and 34 real-market-data tests passing across the immutable
+four-day parent and five-day extended dataset. TFEX-2 is complete. Ruff is clean across 113
+files and strict mypy succeeds over 110 source files. Canonical current status and QA live
+in `docs/development_status.md`.
 
 Everything from **Git state** onward is the original baseline-time evidence. Statements that
 identity or the baseline commit was blocked describe that historical moment, not current Git

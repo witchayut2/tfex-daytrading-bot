@@ -13,7 +13,8 @@ The immutable extended S50U26 1-minute dataset covers exactly five complete trad
 (2026-09-08, 09, 10, 11, and 14), contains 1,775 rows, and passed all eleven validator
 checks. Its normalized checksum, ten source-capture checksums, two new-capture checksums,
 and four-day parent lineage were re-verified. The canonical acceptance classifier returns
-`TFEX2_REAL_DATA_VALIDATED`. **TFEX-2 remains `TFEX2_NOT_STARTED`.**
+`TFEX2_REAL_DATA_VALIDATED`. A later, separately authorized implementation completed
+TFEX-2; the data decision in this document remains unchanged.
 
 | Requirement for `READY_FOR_TFEX2` | Status |
 | --- | --- |
@@ -33,8 +34,9 @@ and four-day parent lineage were re-verified. The canonical acceptance classifie
 | Minimum five complete trading days | ✅ 5 complete days; `minimum_dataset_requirement_met: true` |
 
 Readiness evidence status: **`TFEX2_REAL_DATA_VALIDATED`**. Data-readiness decision:
-**`READY_FOR_TFEX2`**. Implementation milestone status remains **`TFEX2_NOT_STARTED`**;
-readiness does not itself start replay or aggregation work.
+**`READY_FOR_TFEX2`**. Implementation milestone status is now **`TFEX2_COMPLETE`** based on
+the separate replay acceptance matrix in `docs/tfex2_acceptance.md`; readiness alone did
+not promote it.
 
 ---
 
@@ -200,8 +202,9 @@ exit 3 on a checksum mismatch, exit 1 with a placeholder source.
 
 `mark_tfex2_complete()` raises `RealMarketDataValidationRequired` unless at least one
 validated, non-synthetic dataset explicitly proves the minimum five-complete-trading-day
-history requirement. Structural real-data validity and history sufficiency are separate.
-Status ladder:
+history requirement **and** a matching replay proves dataset ID, SHA-256, row count,
+confirmed 5m/15m output, and a deterministic digest. Structural real-data validity, history
+sufficiency, and implementation acceptance are separate. Data-evidence status ladder:
 `TFEX2_NOT_STARTED` → `TFEX2_FIXTURE_VALIDATED` →
 `TFEX2_INTERIM_REAL_DATA_VALIDATED` → `TFEX2_REAL_DATA_VALIDATED`.
 
@@ -255,12 +258,12 @@ exchange fee and the broker commission remain `UNKNOWN`.
 ## Verification
 
 ```text
-uv run pytest tests/tfex          499 passed, 1 skipped
-uv run pytest -m anti_repaint      22 passed, 478 deselected
-uv run pytest -m real_market_data  20 passed, 480 deselected
+uv run pytest tests/tfex          530 passed, 1 skipped
+uv run pytest -m anti_repaint      31 passed, 500 deselected
+uv run pytest -m real_market_data  34 passed, 497 deselected
 uv run ruff check .                All checks passed
-uv run ruff format --check .       108 files already formatted
-uv run mypy .                      Success - 105 source files
+uv run ruff format --check .       113 files already formatted
+uv run mypy .                      Success - 110 source files
 uv run python scripts/validate_calendar_data.py --year 2026   PASS (all 9 proofs)
 uv run python scripts/import_tfex_contracts.py                0 conflicts
 ```
@@ -304,5 +307,6 @@ aggregation, opening-range, or gap-engine implementation started in this re-eval
 - The exchange fee cap was not treated as an actual charge.
 - No dataset was scraped from TradingView or any source whose terms forbid it.
 - No S50 contracts were merged before raw validation.
-- TFEX-2 was not started, and TFEX-2 was not simulated as complete.
+- The readiness promotion did not itself start TFEX-2; a later separately authorized task
+  implemented it and passed the independent acceptance matrix.
 - No live order route exists; `live_orders_enabled: true` still raises.

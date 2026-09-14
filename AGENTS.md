@@ -18,6 +18,8 @@ Before editing anything:
    - `docs/tfex_architecture.md`
    - `docs/tfex_data_readiness_gate.md`
    - `docs/tfex_historical_data_sources.md`
+   - `docs/tfex_candle_alignment.md`
+   - `docs/tfex2_acceptance.md`
    - `docs/baseline_manifest.md`
    - `docs/CODEX_HANDOFF.md` if present
 5. Run:
@@ -39,18 +41,20 @@ The repository itself is the final source of truth if it differs from this hando
   1,775 rows) is `REAL_DATA_VALIDATED`, passes all validator checks, and has verified
   parent/raw/normalized checksum lineage.
 - The minimum of five complete trading days is met. The current gate is
-  `READY_FOR_TFEX2`; TFEX-2 remains `NOT STARTED` until separately authorized.
+  `READY_FOR_TFEX2`.
+- TFEX-2 deterministic raw-contract replay and causal market state are complete and tested
+  against the five-day real S50U26 dataset. TFEX-3 remains `NOT STARTED`.
 - Future risk/order/position and strategy-research protocols are locked as dormant,
   fail-closed contracts. They do not start TFEX-2, TFEX-4, or TFEX-5.
 - Licensed historical data and operator-specific capability evidence remain outside Git.
 
 Latest verified QA:
-- `uv run pytest tests/tfex` -> 499 passed, 1 skipped
-- `uv run pytest -m anti_repaint` -> 22 passed, 478 deselected
-- `uv run pytest -m real_market_data` -> 20 passed, 480 deselected
+- `uv run pytest tests/tfex` -> 530 passed, 1 skipped
+- `uv run pytest -m anti_repaint` -> 31 passed, 500 deselected
+- `uv run pytest -m real_market_data` -> 34 passed, 497 deselected
 - `uv run ruff check .` -> PASS
-- `uv run ruff format --check .` -> PASS, 108 files
-- `uv run mypy .` -> PASS, 105 source files
+- `uv run ruff format --check .` -> PASS, 113 files
+- `uv run mypy .` -> PASS, 110 source files
 
 TFEX-2 must NEVER be marked complete from synthetic fixtures alone.
 
@@ -79,8 +83,8 @@ User has:
 - App ID and Secret held by the user
 
 Current engineering boundary:
-the data-readiness gate is satisfied. TFEX-2 may begin only in a separate, explicitly
-authorized task; readiness itself does not start replay, aggregation, or strategy work.
+the data-readiness gate and TFEX-2 are complete. TFEX-3 analysis may begin only in a
+separate, explicitly authorized task; no strategy, execution, or live-order work is active.
 
 ## 6. Secret handling — critical
 Never print, log, echo, persist, commit, paste into docs, or expose:

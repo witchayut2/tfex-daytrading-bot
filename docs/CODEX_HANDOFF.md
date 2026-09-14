@@ -5,7 +5,8 @@
 The sections below are the original migration handoff and are retained as provenance. The
 repository has advanced: S50U26 one-minute data for five complete days (1,775 rows) is
 `REAL_DATA_VALIDATED`, with validator, manifest, checksum, and parent-lineage evidence
-passing. The current gate is `READY_FOR_TFEX2`; TFEX-2 remains `NOT STARTED`.
+passing. The current gate remains `READY_FOR_TFEX2`; TFEX-2 is now `TFEX2_COMPLETE` after
+deterministic real-data replay and market-state acceptance. TFEX-3 remains not started.
 
 The future risk/order/position contract is now locked in
 `docs/tfex_risk_order_position_contract.md` with dormant deterministic unit scaffolding.

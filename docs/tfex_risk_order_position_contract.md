@@ -5,7 +5,7 @@ Status: **ARCHITECTURE LOCKED / DETERMINISTIC UNIT SCAFFOLD TESTED**
 This document is the canonical safety contract for future strategy, risk, paper-broker,
 and execution work. It does **not** start TFEX-2, TFEX-4, or TFEX-5; it creates no broker
 connection and has no order-submission method. The data gate is `READY_FOR_TFEX2`, while
-TFEX-2 remains not started until separately authorized.
+TFEX-2 is complete. This contract remains dormant; TFEX-4 and TFEX-5 are not started.
 
 Read this with `CLAUDE.md`, `CLAUDE_TFEX.md`, `docs/tfex_architecture.md`, and
 `docs/tfex_data_readiness_gate.md`. If a future implementation conflicts with this

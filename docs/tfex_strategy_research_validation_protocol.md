@@ -11,7 +11,8 @@ Read this with `CLAUDE.md`, `CLAUDE_TFEX.md`, `docs/tfex_architecture.md`,
 `docs/tfex_data_readiness_gate.md`, and
 `docs/tfex_risk_order_position_contract.md`. The current real S50U26 1-minute dataset
 contains five complete trading days and satisfies the data-readiness gate. Current decision:
-`READY_FOR_TFEX2`. TFEX-2 remains not started until separately authorized.
+`READY_FOR_TFEX2`. TFEX-2 is complete; TFEX-3 strategy analysis remains not started and
+requires separate authorization.
 
 ## 1. What is locked, and what is not implemented
 

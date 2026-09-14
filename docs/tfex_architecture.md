@@ -1,12 +1,11 @@
 # TFEX Platform Architecture
 
-Status: **Milestone TFEX-1 complete, plus the data-readiness gate.** Configuration,
-provenance, calendar, contracts, sessions, cost provenance and market-data validation are
-implemented. Five complete S50U26 1-minute days are real-data validated with checksum and
-parent-lineage evidence; the gate is `READY_FOR_TFEX2` while TFEX-2 remains not started
-(`docs/tfex_data_readiness_gate.md`). Dormant risk,
-order, and position-management contracts and the research-validation protocol are locked for
-future milestones, but no strategy, replay, optimizer, or execution runtime has started.
+Status: **Milestone TFEX-2 complete.** Configuration, provenance, calendar, contracts,
+sessions, validation, and deterministic raw-contract replay/market state are implemented.
+Five complete S50U26 1-minute days are real-data validated and replayed with checksum and
+parent-lineage evidence; the data gate remains `READY_FOR_TFEX2`. Dormant risk, order, and
+position-management contracts and the research-validation protocol remain locked for future
+milestones. TFEX-3 strategies, optimization, execution, and live trading have not started.
 Licensed historical data and operator-specific capability evidence stay local and ignored;
 their universal SDK/API conclusions are captured in tests and canonical readiness docs.
 
@@ -69,11 +68,11 @@ contracts/ ........ symbols -> resolved contracts -> registry -> roll policy
       │
 sessions/ ......... phases for a date -> session state -> entry/exit gates
       │
-marketdata/ ....... bars -> dataset provenance -> validation -> acceptance gate
+marketdata/ ....... bars -> validation -> replay -> causal 5m/15m/VWAP market state
       │
 risk/ contracts ... dormant proposal -> risk -> protected-position specifications
       │
-(TFEX-2+) candles, structure, strategies, broker runtime, dashboard
+(TFEX-3+) structure, strategies, broker runtime, dashboard
 ```
 
 `config.py` imports `costs/models.py` for its two provenance enums, so `costs/__init__.py`
@@ -128,8 +127,11 @@ know it), and a strategy may only read values whose `confirmed_at` has passed.
 | `contracts/registry.py` | The single source of truth for contract eligibility and selection. |
 | `contracts/roll.py` | Liquidity-based roll policy, confirmation state machine, position-splice guard. |
 | `sessions/boundaries.py` | `SessionState`, phase layout for a date, precedence rules. |
-| `sessions/midday_break.py` | The predicates the TFEX-2 candle aggregation will enforce. |
+| `sessions/midday_break.py` | Canonical no-crossing predicates enforced by aggregation. |
 | `sessions/engine.py` | Session state and the entry/exit/flatten gates. |
+| `sessions/opening_range.py` | Causal 5/15/30-minute morning and afternoon opening ranges. |
+| `sessions/snapshots.py` | Running and finalized morning/afternoon/day profiles and reference levels. |
+| `sessions/gaps.py` | Timestamped overnight, midday, and informational raw-contract roll gaps. |
 | `costs/models.py` | `FeeProvenanceStatus`, `FeeComponent`, `RoundTripCostEstimate`. A published cap physically refuses to be charged as a production cost. |
 | `costs/exchange_fees.py` | The THB 7 cap (never chargeable) and the actual fee (`UNKNOWN` until verified). |
 | `costs/commissions.py` | Broker commission — negotiable, so `UNKNOWN` with no default. |
@@ -137,7 +139,12 @@ know it), and a strategy may only read values whose `confirmed_at` has passed.
 | `marketdata/csv_loader.py` | Reads a vendor CSV. A naive timestamp requires a declared source timezone. |
 | `marketdata/validation.py` | Eleven independent data-quality checks (section 28). |
 | `marketdata/manifest.py` | Dataset provenance and checksum enforcement. |
-| `marketdata/acceptance.py` | The guard that stops fixtures promoting a milestone. |
+| `marketdata/acceptance.py` | Completion guard requiring minimum-history real data plus a matching replay. |
+| `marketdata/aggregation.py` | Session-anchored 5m/15m OHLCV aggregation with explicit forming/confirmed state. |
+| `marketdata/vwap.py` | Causal HLC3 full-day, morning, and afternoon VWAP modes. |
+| `marketdata/replay.py` | One-event cursor, deterministic restart/seek, derived-state orchestration, and replay digest. |
+| `feeds/base.py` | Immutable closed-bar market event and replay status types. |
+| `feeds/csv_feed.py` | Manifest/checksum-aware one-minute CSV replay input. |
 
 The risk package now also contains **dormant architecture/test scaffolding**, not a started
 TFEX-4/TFEX-5 runtime:
@@ -158,8 +165,8 @@ strategy milestone. `docs/tfex_strategy_research_validation_protocol.md` is cano
 | `research/models.py` | Chronological partitions, one-use holdout, walk-forward folds, causal information, costs, metrics, trial registry, execution evidence, and acceptance states. |
 | `research/protocol.py` | Pure append-only and fail-closed validation operations. |
 
-All other future-milestone modules remain documented placeholders. No candle, strategy,
-broker, or order-transport implementation was introduced.
+TFEX-3 and later runtime modules remain placeholders. TFEX-2 introduced no strategy,
+broker, risk-runtime, or order-transport implementation.
 
 ## 5. Decisions the specification left open
 
@@ -211,13 +218,14 @@ broker, or order-transport implementation was introduced.
 
 ## 7. Testing
 
-500 tests under `backend/tests/tfex/` (499 passed, 1 optional installed-SDK signature check
+531 tests under `backend/tests/tfex/` (530 passed, 1 optional installed-SDK signature check
 skipped). Two markers:
 
 - `anti_repaint` — encodes a non-repainting invariant, so the suite section 31 requires can
   be run on its own.
-- `real_market_data` — runs the same ten checks against both the non-synthetic four-day
-  parent and five-day extended dataset. Twenty tests pass; the child proves the minimum.
+- `real_market_data` — runs validation and TFEX-2 replay acceptance against both the
+  non-synthetic four-day parent and five-day extended dataset. Thirty-four tests pass; only
+  the child can satisfy the minimum-history completion guard.
 
 Calendar fixtures use **invented** holiday dates, chosen to exercise the awkward cases: a
 holiday on the last calendar day of a month (June), a holiday sitting between the last two
@@ -233,13 +241,15 @@ and ignored licensed market data under `backend/data/tfex/historical/normalized/
 execution path. Its deterministic unit scaffolding is intentionally not wired into runtime
 trading and does not advance the TFEX-2/TFEX-4/TFEX-5 milestones.
 
-## 9. Next: Milestone TFEX-2
+## 9. Milestone TFEX-2 — complete
 
-Raw contract CSV import, 1m/5m/15m aggregation aligned to TFEX sessions, midday-break
-handling, morning/afternoon snapshots, full-day and session VWAP, opening ranges, and the gap
-engine — plus `docs/tfex_candle_alignment.md`, which section 10 requires.
+Raw contract CSV import, one-event replay, 1m/5m/15m aggregation aligned to independent TFEX
+sessions, midday-break handling, morning/afternoon snapshots, full-day and session VWAP,
+opening ranges, and the causal gap engine are implemented and tested. Alignment policy lives
+in `docs/tfex_candle_alignment.md`; requirement evidence is in `docs/tfex2_acceptance.md`.
 
-**Ready, not started.** `docs/tfex_data_readiness_gate.md` records `READY_FOR_TFEX2`: the
-five-day S50U26 1-minute child passed the validator, real-market tests, and complete
-parent/raw/normalized checksum lineage. The four-day parent remains intact. This readiness
-decision does not start TFEX-2; implementation requires a separate authorized task.
+**`TFEX2_COMPLETE`.** The five-day S50U26 run emitted 1,775 causal source frames, 355
+confirmed 5m bars, and 120 confirmed 15m bars with deterministic replay digest
+`413e6430720ed94ad4e2ae7c283d60fd6eb32f555cb75b2b181d7ddb9aa121e6`.
+The data gate remains `READY_FOR_TFEX2`; the four-day parent and licensed data remain
+untouched and ignored. TFEX-3 is not started and requires separate authorization.
