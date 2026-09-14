@@ -22,6 +22,9 @@ from pathlib import Path
 
 import pytest
 
+from app.tfex.analysis.engine import Tfex3Engine, Tfex3Run
+from app.tfex.analysis.pivots import PivotRule
+from app.tfex.analysis.regime import VolatilityRegime
 from app.tfex.calendar import HolidayStore, TradingCalendar
 from app.tfex.config import TfexConfig, load_config
 from app.tfex.errors import ConfigurationError, RealMarketDataValidationRequired
@@ -395,3 +398,71 @@ def test_only_minimum_history_real_replay_can_complete_tfex2(
     else:
         with pytest.raises(RealMarketDataValidationRequired, match="minimum five"):
             mark_tfex2_complete([report], [run])
+
+
+# --- TFEX-3 neutral structure acceptance ------------------------------------------------
+
+
+def _tfex3_real_run(
+    dataset: tuple[Path, DatasetManifest],
+    config: TfexConfig,
+    calendar: TradingCalendar,
+) -> Tfex3Run:
+    tfex2 = _validated_replay(dataset, config, calendar)
+    return Tfex3Engine(
+        PivotRule(left_bars=2, right_bars=2, rule_id="TFEX3_STRICT_WICK_2X2_V1")
+    ).run(tfex2)
+
+
+@pytest.mark.anti_repaint
+def test_real_tfex3_output_is_causal_deterministic_and_raw_contract_preserving(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    first = _tfex3_real_run(dataset, real_config, real_calendar)
+    second = _tfex3_real_run(dataset, real_config, real_calendar)
+    _, manifest = dataset
+    assert first == second
+    assert first.dataset_id == manifest.dataset_id
+    assert first.dataset_sha256 == manifest.sha256
+    assert first.source_bar_count == manifest.record_count
+    assert first.symbol == manifest.symbol
+    assert len(first.digest) == 64 and int(first.digest, 16) >= 0
+    assert all(item.symbol == manifest.symbol for item in first.pivots)
+    assert all(item.confirmed_at > item.event_time for item in first.pivots)
+    assert all(item.confirmed_at > item.event_time for item in first.structure_breaks)
+    assert all(item.confirmed_at <= item.created_at for item in first.liquidity_levels)
+    assert all(item.confirmed_at > item.event_time for item in first.sweeps)
+    assert all(item.confirmed_at > item.formation_event_time for item in first.fair_value_gaps)
+    assert all(item.symbol == manifest.symbol for item in first.order_blocks)
+    assert all(item.confirmed_at > item.event_time for item in first.order_blocks)
+    assert len(first.order_block_selections) == first.bos_count
+    assert sum(item.order_block_id is not None for item in first.order_block_selections) == len(
+        first.order_blocks
+    )
+    assert len(first.liquidity_importance) == len(first.liquidity_levels)
+    assert all(item.is_confirmed for item in first.liquidity_importance)
+    assert all(
+        frame.regime.volatility.regime is VolatilityRegime.UNCALIBRATED for frame in first.frames
+    )
+
+
+@pytest.mark.anti_repaint
+def test_real_tfex3_prefix_and_restart_are_stable(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    tfex2 = _validated_replay(dataset, real_config, real_calendar)
+    rule = PivotRule(left_bars=2, right_bars=2, rule_id="TFEX3_STRICT_WICK_2X2_V1")
+    engine = Tfex3Engine(rule)
+    full = engine.run(tfex2)
+    restarted = engine.run(tfex2)
+    assert restarted == full
+
+    prefix_length = min(420, len(tfex2.frames))
+    prefix = Tfex3Engine(rule)
+    for frame in tfex2.frames[:prefix_length]:
+        prefix.update(frame)
+    assert prefix.frames == full.frames[:prefix_length]
