@@ -6,6 +6,23 @@ data-readiness gate modified anything.
 - **UTC timestamp:** 2026-08-23T23:16:03Z
 - **Repository:** `C:\apps7 tfex\TFEX_ClaudeCode_Starter`
 
+## Current-state note — 2026-09-14
+
+This note updates repository state without rewriting the historical baseline record below.
+The baseline commit now exists as `0a5daae`. The repository is on branch `main`, Git identity
+is configured locally, and the Codex migration commit `4ef9c5d` is HEAD before the pending
+working-tree work. The index is empty; post-baseline data-readiness, dormant risk, and
+research-protocol work remains unstaged in the working tree.
+
+The latest verified tree has 489 TFEX tests passing with 1 optional SDK check skipped,
+20 anti-repaint tests passing, 10 real-market-data tests passing against the four-day
+interim dataset, clean Ruff checks/formatting across 108 files, and strict mypy success over
+105 source files. Canonical current status and QA live in `docs/development_status.md`.
+
+Everything from **Git state** onward is the original baseline-time evidence. Statements that
+identity or the baseline commit was blocked describe that historical moment, not current Git
+state.
+
 ## Git state
 
 | Item | Value |

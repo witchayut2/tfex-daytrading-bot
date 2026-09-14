@@ -28,23 +28,28 @@ Before editing anything:
 
 The repository itself is the final source of truth if it differs from this handoff.
 
-## 3. Known handoff state
-Last known verified state:
+## 3. Current verified state (2026-09-14)
 
-- `0a5daae` — baseline: verified TFEX-0 and TFEX-1 foundation
-- `00e54b8` — feat: add TFEX data readiness validation and official market metadata
+- The verified baseline commit exists: `0a5daae`.
+- The current branch is `main`; Git identity is configured locally (never record its values here).
+- Settrade production authentication, derivatives market-data entitlement, historical
+  candlesticks, the raw `S50U26` contract, and the `1m` interval are confirmed by permitted
+  read-only operator calls.
+- An immutable four-day S50U26 1-minute dataset (2026-09-08 through 2026-09-11,
+  1,420 rows) is `REAL_DATA_VALIDATED` and passes the real-market suite.
+- The unchanged minimum of five complete trading days is not met. The current gate is
+  `BLOCKED_MINIMUM_REAL_HISTORY`; TFEX-2 is `NOT STARTED`.
+- Future risk/order/position and strategy-research protocols are locked as dormant,
+  fail-closed contracts. They do not start TFEX-2, TFEX-4, or TFEX-5.
+- Licensed historical data and operator-specific capability evidence remain outside Git.
 
-Last known QA:
-- `uv run pytest tests/tfex` -> 365 passed, 9 skipped
-- `uv run pytest -m anti_repaint` -> 13 passed, 2 skipped
+Latest verified QA:
+- `uv run pytest tests/tfex` -> 489 passed, 1 skipped
+- `uv run pytest -m anti_repaint` -> 20 passed, 470 deselected
+- `uv run pytest -m real_market_data` -> 10 passed, 480 deselected
 - `uv run ruff check .` -> PASS
-- `uv run ruff format --check .` -> PASS
-- `uv run mypy .` -> PASS, 91 source files
-
-`real_market_data` tests were intentionally skipped because real licensed S50 1-minute data had not yet been acquired.
-
-Last known gate:
-`BLOCKED_REAL_MARKET_DATA`
+- `uv run ruff format --check .` -> PASS, 108 files
+- `uv run mypy .` -> PASS, 105 source files
 
 TFEX-2 must NEVER be marked complete from synthetic fixtures alone.
 
@@ -72,8 +77,10 @@ User has:
 - App code: `ALGO`
 - App ID and Secret held by the user
 
-Immediate engineering objective:
-perform a READ-ONLY Settrade market-data capability probe, then acquire real S50 1-minute raw-contract data if supported.
+Current engineering objective:
+extend the validated four-day S50U26 dataset with one immutable complete trading day, run
+the existing validator and real-market suite, and re-evaluate the five-day readiness gate.
+Do not begin TFEX-2 as part of that acquisition/readiness work.
 
 ## 6. Secret handling — critical
 Never print, log, echo, persist, commit, paste into docs, or expose:

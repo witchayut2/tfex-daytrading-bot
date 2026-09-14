@@ -21,13 +21,13 @@ historical SET50 Index Futures data that preserves individual contract symbols**
 
 | Source | Official? | S50 Futures | Raw contract | 1m | History | API/Export | Cost | Verified |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Settrade Open API | Yes (SET subsidiary) | UNKNOWN | UNKNOWN | **CONFIRMED** (interval set incl. `1m`) | UNKNOWN | REST + Python SDK `settrade-v2` | Free API; broker account required | `PARTIALLY_CONFIRMED` |
+| Settrade Open API | Yes (SET subsidiary) | **CONFIRMED** (`S50U26`) | **CONFIRMED** | **CONFIRMED** | **CONFIRMED** | REST + Python SDK `settrade-v2` | Broker account required; licensing/storage terms unverified | `CONFIRMED` by permitted real operator probe |
 | SETSMART / SMART Marketplace | Yes (SET) | CONFIRMED (TFEX data from 2006) | UNKNOWN | `PARTIALLY_CONFIRMED` (intraday advertised; 1m OHLCV export unconfirmed) | 2006→ | Web + API | ~USD 420–1,000 / month | `ACCESS_REQUIRED` |
 | SET Historical Data-Request Service | Yes (SET) | CONFIRMED | UNKNOWN | UNKNOWN | UNKNOWN | Manual request | Quoted per request | `ACCESS_REQUIRED` |
 | SET tick data service | Yes (SET) | CONFIRMED (TFEX tick from Nov 2014) | Likely (tick carries the series) | Finer than 1m | Nov 2014→ | By request / EOD subscription | Paid | `ACCESS_REQUIRED` |
 | TFEX website market statistics | Yes (TFEX) | CONFIRMED | CONFIRMED | **NOT_SUPPORTED** (daily aggregates) | Long | Web tables | Free | `CONFIRMED` — daily only |
 | TFEX series endpoints (used by this repo) | Yes (TFEX) | CONFIRMED | CONFIRMED | **NOT_SUPPORTED** (quote snapshot, not history) | n/a | JSON | Free | `CONFIRMED` — metadata only |
-| Operator's broker historical feed | Depends | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | `UNKNOWN` — **broker not yet identified** |
+| InnovestX via Settrade Open API | Yes (Settrade service through broker) | **CONFIRMED** (`S50U26`) | **CONFIRMED** | **CONFIRMED** | **CONFIRMED** for acquired window | Python SDK | Account/app access; licensing terms unverified | `CONFIRMED` by permitted real operator calls |
 | Paid vendors (Portara, FirstRate, Databento, Barchart) | No | UNKNOWN | UNKNOWN | Vendor-dependent | Vendor-dependent | Yes | Paid | `UNKNOWN` — TFEX S50 coverage unverified |
 | TradingView | No | — | — | — | — | — | — | **EXCLUDED** — scraping would breach its terms |
 
@@ -35,8 +35,11 @@ historical SET50 Index Futures data that preserves individual contract symbols**
 
 ## 1. Settrade Open API — Priority 1
 
+### SDK documentation and introspection evidence
+
 **Evidence obtained by reading the official Python SDK source** (`settrade-v2` 2.2.1 from
-PyPI), not by paraphrasing marketing copy.
+PyPI), not by paraphrasing marketing copy. The verdict table in this subsection is the
+pre-probe SDK-only result; account/server-dependent facts were still unknown at that stage.
 
 ### `settrade_v2/market.py`
 
@@ -84,8 +87,8 @@ headers, so the server is authoritative and these are only defaults.
 
 | Question | Answer | Evidence |
 | --- | --- | --- |
-| Historical derivatives candlestick? | **UNKNOWN** | `MarketData` is account-level, not asset-class-scoped: `Investor.MarketData` returns one generic client and `symbol` is an unconstrained `str`. Nothing in the SDK states which symbol namespace the techchart service serves. Notably, `get_quote_futures` and `get_series_futures` exist in the source but are **commented out**. |
-| Raw S50 contract symbol (`S50U26`)? | **UNKNOWN** | Not documented; not testable without credentials. |
+| Historical derivatives candlestick? | **UNKNOWN at SDK-only stage** | `MarketData` is account-level, not asset-class-scoped: `Investor.MarketData` returns one generic client and `symbol` is an unconstrained `str`. Nothing in the SDK states which symbol namespace the techchart service serves. Notably, `get_quote_futures` and `get_series_futures` exist in the source but are **commented out**. |
+| Raw S50 contract symbol (`S50U26`)? | **UNKNOWN at SDK-only stage** | Not documented; required a permitted real call. |
 | 1-minute interval? | **CONFIRMED** | `'1m'` is first in the documented interval list, and `get_candlestick` takes the same `interval: str` against the same techchart service. |
 | Maximum lookback? | **UNKNOWN** | `start`/`end`/`limit` exist; no bound is documented client-side. Server-side. |
 | Maximum bars per request? | **UNKNOWN** | `limit` is `Optional[int]` with no documented ceiling. |
@@ -94,10 +97,24 @@ headers, so the server is authoritative and these are only defaults.
 | Broker dependency? | **YES** | Same reason; capability may differ per participating broker. |
 | Sandbox vs production? | **CONFIRMED they differ** | Separate hosts `marketapi.settrade.com` vs `marketapi-test.settrade.com`. UAT data content is unverified and must not be treated as market truth. |
 
-**Conclusion:** the documentation statement "Market Info supports historical data" is *not*
-proof of 1-minute S50 contract history, exactly as the gate warned. The interval vocabulary
-is proven; the symbol coverage and depth are not. Resolving them needs one permitted
-read-only call with real credentials.
+**SDK-only conclusion:** the documentation statement "Market Info supports historical data"
+was not proof of 1-minute S50 contract history. The interval vocabulary was proven, while
+symbol coverage, entitlement, and depth required a permitted real call.
+
+### Real operator probe and acquisition evidence
+
+The permitted production probe using the operator's own environment confirmed
+authentication, derivatives market-data entitlement, historical candlesticks, raw
+`S50U26`, and `1m`. A five-bar request succeeded. This is application/account capability
+evidence, distinct from the universal SDK signature above; its sanitized JSON remains local
+and ignored by Git.
+
+The later immutable acquisition covers four complete trading days, 2026-09-08 through
+2026-09-11, with 1,420 rows. It passed all validator checks and all ten real-market-data
+tests. That proves structural real-data validity, but the unchanged five-day minimum remains
+false. A 2026-09-07 request returned no bars while 2026-09-08 returned complete sessions;
+this is an observed, inferred historical-availability boundary, **not** proof of an official
+retention policy.
 
 ---
 
@@ -123,12 +140,13 @@ specific questions — (a) is per-contract 1-minute OHLCV available for SET50 fu
 
 ## 3. Operator's broker historical feed — Priority 3
 
-**Blocked at step zero: the broker has not been identified.** Section 26 prerequisite 1
-requires confirming the broker is on the Settrade supported-broker list before any
-connectivity work. Until the operator names the broker, nothing here can be assessed.
+The operator uses InnovestX TFEX through Settrade Open API. A real production probe has
+confirmed authentication, derivatives market-data entitlement, raw S50U26 identity, and
+historical 1-minute candlesticks. Available history depth remains empirically bounded:
+2026-09-07 returned no bars while 2026-09-08 returned a complete morning session.
 
-Questions to answer once known: interface, interval, history depth, symbol namespace,
-licence, authentication, export mechanism.
+Storage and redistribution licence terms remain unverified, so acquired files stay local
+and ignored by Git.
 
 ---
 
@@ -157,7 +175,8 @@ licence permitting local storage and derived research.
 
 ```text
 PRIMARY_REAL_DATA_SOURCE      Settrade Open API — get_candlestick(symbol, "1m", start, end)
-                              pending: credentials + one read-only probe of S50 symbol coverage
+                              capability VERIFIED by real S50U26 1m read-only responses
+                              observed availability: 2026-09-07 empty; 2026-09-08 available
 
 SECONDARY_VALIDATION_SOURCE   SET / SETSMART tick or intraday data request
                               pending: subscription or a quoted data request
@@ -166,36 +185,45 @@ SECONDARY_VALIDATION_SOURCE   SET / SETSMART tick or intraday data request
 ## Current status
 
 ```text
-REAL_1M_DATA_BLOCKED
+BLOCKED_MINIMUM_REAL_HISTORY
 ```
 
-No real 1-minute SET50 futures dataset could be acquired in this environment. Nothing was
-substituted for it: no synthetic candles were generated and labelled as market data.
+The Settrade capability gate and structural real-data gate are proven. The immutable S50U26
+interim dataset for 2026-09-08 through 2026-09-11 contains 1,420 real bars, has normalized
+SHA-256 `d15558d1268b9e5228b860127344f38a7affb428315c7b770c43d00bbb58c424`,
+and passed all eleven validator checks. `uv run pytest -m real_market_data` executed against
+it with 10 passes. Its manifest correctly keeps `minimum_dataset_requirement_met: false`.
+
+Real diagnostics observed S50U26 on 2026-09-07 returning zero bars and 2026-09-08 returning
+a complete 165-bar morning session. This is evidence of an endpoint availability boundary,
+not proof of an official retention policy. The unavailable day remains explicit and was not
+silently skipped, filled, or replaced.
+
+The next prospective day is 2026-09-14. Extension creates two new immutable raw captures
+(165 morning bars and 190 afternoon bars), then constructs—not mutates—a 1,775-row normalized
+dataset for exactly 2026-09-08, 09, 10, 11, and 14. Its manifest records the parent dataset
+and normalized checksum, all ten source-capture hashes, the two new hashes, and all five
+trading dates. Only an exact validator PASS may set the minimum requirement true.
 
 ### Exactly what is required from the operator
 
 **Option A — Settrade (preferred, likely free with an existing account)**
 
-1. Name the broker and confirm it appears on
-   <https://developer.settrade.com/open-api/document/broker-list>.
-2. Obtain Open API credentials and export them as environment variables — never into a file
-   in this repository:
+1. Keep the already verified Open API credentials as process environment variables — never
+   in a repository file:
    ```text
    SETTRADE_APP_ID
    SETTRADE_APP_SECRET
    SETTRADE_BROKER_ID
    SETTRADE_APP_CODE
    ```
-3. Run the capability probe, which performs a **single read-only** call and writes an
-   evidence file — it does not place orders and it does not print secrets:
-   ```bash
-   uv run python scripts/data_sources/settrade_history.py --probe --symbol S50Z26
+2. Extend the validated interim dataset with 2026-09-14. This makes exactly two session
+   requests and leaves the parent untouched:
+   ```powershell
+   uv run --directory backend --with "settrade-v2==2.2.1" python scripts/data_sources/settrade_history.py --symbol S50U26 --interval 1m --start 2026-09-14 --end 2026-09-14 --limit 200 --request-delay-seconds 1.1 --environment prod --extend-parent data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-11_INTERIM.csv --parent-normalized-sha256 d15558d1268b9e5228b860127344f38a7affb428315c7b770c43d00bbb58c424
    ```
-4. If the probe confirms S50 symbols and 1-minute bars, download:
-   ```bash
-   uv run python scripts/data_sources/settrade_history.py \
-       --symbol S50Z26 --interval 1m --start 2026-06-01 --end 2026-08-21
-   ```
+3. Validate the new five-day CSV and run `pytest -m real_market_data`. The gate may become
+   `READY_FOR_TFEX2` only when both pass and all manifest/checksum lineage remains valid.
 
 **Option B — SET / SETSMART**
 

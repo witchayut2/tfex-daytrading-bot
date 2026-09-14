@@ -2,8 +2,12 @@
 
 Status: **Milestone TFEX-1 complete, plus the data-readiness gate.** Configuration,
 provenance, calendar, contracts, sessions, cost provenance and market-data validation are
-implemented, and the calendar now runs on **real imported exchange data**. TFEX-2 is blocked
-on real 1-minute market data (`docs/tfex_data_readiness_gate.md`).
+implemented. Four complete S50U26 1-minute days are real-data validated; TFEX-2 remains
+blocked on the unchanged five-day minimum (`docs/tfex_data_readiness_gate.md`). Dormant risk,
+order, and position-management contracts and the research-validation protocol are locked for
+future milestones, but no strategy, replay, optimizer, or execution runtime has started.
+Licensed historical data and operator-specific capability evidence stay local and ignored;
+their universal SDK/API conclusions are captured in tests and canonical readiness docs.
 
 Read with `CLAUDE.md` and `CLAUDE_TFEX.md`. Where this document and the specification
 disagree, the specification wins; where this document records a *decision* the specification
@@ -66,7 +70,9 @@ sessions/ ......... phases for a date -> session state -> entry/exit gates
       │
 marketdata/ ....... bars -> dataset provenance -> validation -> acceptance gate
       │
-(TFEX-2+) candles, structure, strategies, risk, brokers, dashboard
+risk/ contracts ... dormant proposal -> risk -> protected-position specifications
+      │
+(TFEX-2+) candles, structure, strategies, broker runtime, dashboard
 ```
 
 `config.py` imports `costs/models.py` for its two provenance enums, so `costs/__init__.py`
@@ -132,9 +138,27 @@ know it), and a strategy may only read values whose `confirmed_at` has passed.
 | `marketdata/manifest.py` | Dataset provenance and checksum enforcement. |
 | `marketdata/acceptance.py` | The guard that stops fixtures promoting a milestone. |
 
-Everything else under `app/tfex/` exists as a documented placeholder naming its milestone and
-the invariant it must hold. They contain no logic — a half-implemented opening range is
-exactly how repaint risk R4 gets in.
+The risk package now also contains **dormant architecture/test scaffolding**, not a started
+TFEX-4/TFEX-5 runtime:
+
+| Module | Locked future contract (no runtime activation) |
+| --- | --- |
+| `risk/models.py` | Quantity-free proposals, strategy rules, cost/risk calculations, approved plans, kill decisions, and audit events. |
+| `risk/engine.py` | Pure fail-closed sizing and kill-switch evaluation. No broker dependency. |
+| `risk/position.py` | Immutable lifecycle, fill/protection reducers, stop rules, EOD/emergency/recovery state. |
+| `risk/audit.py` | Reconstructable aggregate audit schema. No storage adapter. |
+| `risk/boundary.py` | Strategies emit proposals; future execution admits approved plans only. |
+
+The research package is likewise a dormant contract layer, not a backtester or a started
+strategy milestone. `docs/tfex_strategy_research_validation_protocol.md` is canonical:
+
+| Module | Locked future research contract (no replay or strategy runtime) |
+| --- | --- |
+| `research/models.py` | Chronological partitions, one-use holdout, walk-forward folds, causal information, costs, metrics, trial registry, execution evidence, and acceptance states. |
+| `research/protocol.py` | Pure append-only and fail-closed validation operations. |
+
+All other future-milestone modules remain documented placeholders. No candle, strategy,
+broker, or order-transport implementation was introduced.
 
 ## 5. Decisions the specification left open
 
@@ -154,6 +178,12 @@ exactly how repaint risk R4 gets in.
 | D12 | Is THB 7 per contract per side a cost? | No — it is a **cap**, modelled as `VERIFIED_EXCHANGE_CAP` with `production_charge=False`. The actual fee is `UNKNOWN`. | Deducting a cap as an actual charge overstates expenses, rejects viable strategies, and will not reconcile against a broker statement. |
 | D13 | What counts as a verified source? | A ladder: `NOT_VERIFIED` → `RETRIEVED` → `PARSED` → `CROSS_CHECKED` → `VERIFIED_OFFICIAL`, plus `STALE` / `CONFLICT` / `UNAVAILABLE`. Only the top two count as verified. | "We fetched it" must never be mistaken for "we confirmed it". Verification is per source *and* per fact. |
 | D14 | A synthetic dataset that validates cleanly. | Can never satisfy TFEX-2 acceptance; `mark_tfex2_complete` raises. | Fixtures prove the code matches its author's expectations, not that it survives real quiet minutes, feed gaps and off-tick prints. |
+| D15 | Who chooses contract quantity? | Only `RiskEngine`, by flooring remaining THB risk capacity divided by per-contract stop-and-cost risk. Strategies are quantity-free. | Lot-first sizing can silently exceed the stop-defined risk budget. |
+| D16 | Can a stop be widened after entry? | No. Unchanged or deterministic risk-reducing moves are allowed; every widening request is rejected. No exception exists. | Maximum loss may never grow through a management shortcut. |
+| D17 | Is every strategy forced to 1:2? | No. Fixed targets use cost-adjusted RRR; deterministic non-target exits use versioned, strategy-specific expectancy evidence. | Different deterministic exits have different payoff distributions; inventing a target would misstate them. |
+| D18 | What happens to a partial fill? | Every filled contract immediately carries matching planned/pending/active protection; partial exits reduce protective quantity atomically. | Local state may never represent unprotected filled exposure. |
+| D19 | What does a kill switch do to open positions? | It always blocks new entries, preserves existing protection, and separately requests flattening when executable. | Disabling entries must not cancel the only protection on existing risk. |
+| D20 | What risk values ship by default? | All numerical thresholds are `null` and `UNCALIBRATED`; a complete set may be labelled `RESEARCH_ONLY`, never production-ready. | No arbitrary number should acquire authority merely by being a code default. |
 
 ## 6. What the platform refuses to ship
 
@@ -171,18 +201,22 @@ exactly how repaint risk R4 gets in.
 - **A live order route.** `TradingConfig` raises `LiveTradingDisabledError` if anything sets
   `live_orders_enabled: true`, including via YAML. Section 32's gates are not met and this
   build has no broker connectivity.
+- **An uncalibrated risk approval.** Missing/null thresholds activate a kill trigger and
+  reject every new entry. The unit scaffold can approve only an explicitly complete,
+  `RESEARCH_ONLY` configuration.
 - **Overstated verification.** The register seeds every source as `NOT_VERIFIED`, and
   statuses are written from stored captures by `scripts/update_source_verification.py`, not
   by hand. Six of ten sources are still `NOT_VERIFIED` today, including both margin pages.
 
 ## 7. Testing
 
-374 tests under `backend/tests/tfex/` (365 run, 9 skip for want of real data). Two markers:
+490 tests under `backend/tests/tfex/` (489 passed, 1 optional installed-SDK signature check
+skipped). Two markers:
 
 - `anti_repaint` — encodes a non-repainting invariant, so the suite section 31 requires can
   be run on its own.
-- `real_market_data` — requires a validated non-synthetic dataset on disk. These **skip**
-  today, and skipping is not passing.
+- `real_market_data` — runs against the validated non-synthetic four-day dataset. Ten tests
+  pass, while minimum-history sufficiency remains separately false.
 
 Calendar fixtures use **invented** holiday dates, chosen to exercise the awkward cases: a
 holiday on the last calendar day of a month (June), a holiday sitting between the last two
@@ -191,14 +225,20 @@ They are labelled as fixtures in `conftest.py` so they can never be mistaken for
 and they are kept separate from the real imported data under `backend/data/tfex/official/`,
 which the `real_market_data` tests use instead.
 
-## 8. Next: Milestone TFEX-2
+## 8. Locked future risk contract
+
+`docs/tfex_risk_order_position_contract.md` is canonical for every future strategy and
+execution path. Its deterministic unit scaffolding is intentionally not wired into runtime
+trading and does not advance the TFEX-2/TFEX-4/TFEX-5 milestones.
+
+## 9. Next: Milestone TFEX-2
 
 Raw contract CSV import, 1m/5m/15m aggregation aligned to TFEX sessions, midday-break
 handling, morning/afternoon snapshots, full-day and session VWAP, opening ranges, and the gap
 engine — plus `docs/tfex_candle_alignment.md`, which section 10 requires.
 
-**Blocked.** `docs/tfex_data_readiness_gate.md` records the decision
-`BLOCKED_REAL_MARKET_DATA`: no real 1-minute SET50 futures dataset could be acquired, and
-none was fabricated in its place. The validator, the manifests and the acceptance gate are
-already in place, so the moment a legitimate dataset arrives it can be validated and TFEX-2
-can begin against it.
+**Blocked.** `docs/tfex_data_readiness_gate.md` records
+`BLOCKED_MINIMUM_REAL_HISTORY`: four complete S50U26 1-minute days are validated, but the
+unchanged gate requires at least five. The validated parent dataset remains intact; TFEX-2
+does not begin until a fifth complete day passes the existing validator, real-market tests,
+and provenance/checksum checks.

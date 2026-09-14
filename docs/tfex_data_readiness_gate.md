@@ -1,30 +1,33 @@
 # TFEX Data-Readiness Gate — Decision
 
-- **Date:** 2026-08-24
+- **Date:** 2026-09-14
 - **Baseline:** verified TFEX-0 / TFEX-1, tree `4b7cb1f697a97d9bc625c0b26607e30b7bc5f3dc`
 
 ## Decision
 
 ```text
-BLOCKED_REAL_MARKET_DATA
+BLOCKED_MINIMUM_REAL_HISTORY
 ```
 
-Everything the gate asked for was completed **except** the one thing that cannot be produced
-from this environment: a real historical 1-minute SET50 futures dataset. No substitute was
-created. **TFEX-2 was not started**, per the gate's own instruction.
+Real S50U26 1-minute market data is now structurally validated. The immutable interim
+dataset covers four complete trading days (2026-09-08 through 2026-09-11), contains 1,420
+rows, and passed all eleven validator checks. The only remaining readiness blocker is the
+unchanged minimum of five complete trading days. **TFEX-2 was not started.**
 
 | Requirement for `READY_FOR_TFEX2` | Status |
 | --- | --- |
 | 2026 TFEX holiday calendar imported and verified | ✅ 20 official holidays, `VERIFIED_OFFICIAL` |
 | SET50 Futures contract / last-trading-day calendar imported and verified | ✅ 6 contracts, 4 cross-checked `VERIFIED` |
-| Baseline Git state protected or commit blocker documented | ✅ tree recorded; commit blocked and documented |
+| Baseline Git state protected | ✅ baseline commit `0a5daae` exists; historical tree provenance retained |
 | Exchange fee semantics corrected | ✅ cap and actual charge separated in the type system |
 | Market-data validator implemented | ✅ 11 checks, 4 exit codes, CLI exercised end to end |
-| A legitimate real 1-minute S50 source identified | ⚠️ **partially** — Settrade Open API selected; symbol coverage and depth unconfirmed without credentials |
-| At least one real raw contract dataset acquired and validated | ❌ **none available** |
+| A legitimate real 1-minute S50 source identified | ✅ Settrade Open API production; S50U26 raw contract and `1m` verified by real read-only calls |
+| At least one real raw contract dataset acquired and validated | ✅ S50U26, 2026-09-08 through 2026-09-11, 1,420 rows, validator PASS |
+| Minimum five complete trading days | ❌ 4 complete days; 2026-09-07 was unavailable and was not fabricated |
 
-Milestone status: **`TFEX2_NOT_STARTED`**. The acceptance machinery exists and refuses to
-report anything better on fixtures alone.
+Readiness evidence status: **`TFEX2_INTERIM_REAL_DATA_VALIDATED`**. Implementation milestone
+status remains **`TFEX2_NOT_STARTED`**. The acceptance machinery refuses promotion until a
+new five-day dataset passes validation with explicit lineage.
 
 ---
 
@@ -36,7 +39,10 @@ Verified before any modification: 277 passed, 12 anti-repaint, ruff clean, 73 fi
 formatted, mypy strict clean on 71 files. Evidence: `docs/data_readiness_baseline.md`.
 No test was weakened; none was failing.
 
-### PART B — Git initialised, commit blocked
+### PART B — Git initialised; commit blocked at the time
+
+The following is historical gate-time evidence. Git identity was later configured and the
+baseline commit now exists as `0a5daae`; see `docs/baseline_manifest.md`.
 
 ```text
 BASELINE COMMIT BLOCKED:
@@ -118,8 +124,9 @@ The distinction is enforced by types, not documentation:
 
 Full audit: `docs/tfex_historical_data_sources.md`.
 
-Primary evidence came from reading the official `settrade-v2` 2.2.1 SDK source, not from
-marketing copy:
+The first pass used the official `settrade-v2` 2.2.1 SDK source, not marketing copy. This
+SDK-only table records what could and could not be proven before the permitted real operator
+probe; its `UNKNOWN` entries are historical evidence, not the current capability verdict:
 
 ```python
 def get_candlestick(self, symbol, interval, limit=None, start=None, end=None, normalized=None)
@@ -129,13 +136,30 @@ def get_candlestick(self, symbol, interval, limit=None, start=None, end=None, no
 | Question | Answer | Basis |
 | --- | --- | --- |
 | 1-minute interval | **CONFIRMED** | SDK documents `'1m', '3m', '5m', … '1M'` |
-| Historical derivatives candlestick | **UNKNOWN** | `MarketData` is generic; `get_quote_futures` is commented out in the SDK |
-| Raw S50 contract symbol | **UNKNOWN** | undocumented; untestable without credentials |
+| Historical derivatives candlestick | **UNKNOWN at SDK-only stage** | `MarketData` is generic; `get_quote_futures` is commented out in the SDK |
+| Raw S50 contract symbol | **UNKNOWN at SDK-only stage** | undocumented; required a permitted real call |
 | Max lookback / bars per request | **UNKNOWN** | server-side |
 | Pagination | **UNKNOWN** | none in the signature; windowing only |
 | Entitlement / broker dependency | **YES** | `broker_id` is embedded in the URL path |
 | Sandbox vs production | **differ** | separate hosts `marketapi` / `marketapi-test` |
 | Rate limits | 5/second, 60/minute defaults | `context.py`, server-overridable via headers |
+
+The later read-only production probe resolved the account/server-dependent capability facts:
+
+| Real operator probe fact | Current status |
+| --- | --- |
+| Authentication | **CONFIRMED** |
+| Derivatives market-data entitlement | **CONFIRMED** |
+| Historical derivatives candlestick | **CONFIRMED** |
+| Raw `S50U26` contract | **CONFIRMED** |
+| `1m` interval | **CONFIRMED** |
+| Small request | **CONFIRMED** — 5 bars returned |
+
+The subsequent immutable four-day acquisition and validator PASS prove real-dataset
+structure separately from both SDK introspection and capability probing. Neither the probe
+nor the dataset establishes a documented maximum history depth or official retention
+policy. The empty 2026-09-07 response followed by complete 2026-09-08 sessions is only an
+observed, inferred availability boundary.
 
 Selected: **primary** Settrade Open API, **secondary** SET/SETSMART tick or intraday request
 (TFEX tick from Nov 2014; ~USD 420–1,000/month). TradingView excluded on terms of service.
@@ -168,20 +192,32 @@ exit 3 on a checksum mismatch, exit 1 with a placeholder source.
 ### PARTS U, V — acceptance gate
 
 `mark_tfex2_complete()` raises `RealMarketDataValidationRequired` unless at least one
-validated, non-synthetic dataset is supplied. Status ladder:
-`TFEX2_NOT_STARTED` → `TFEX2_FIXTURE_VALIDATED` → `TFEX2_REAL_DATA_VALIDATED`.
+validated, non-synthetic dataset explicitly proves the minimum five-complete-trading-day
+history requirement. Structural real-data validity and history sufficiency are separate.
+Status ladder:
+`TFEX2_NOT_STARTED` → `TFEX2_FIXTURE_VALIDATED` →
+`TFEX2_INTERIM_REAL_DATA_VALIDATED` → `TFEX2_REAL_DATA_VALIDATED`.
+
+An interim four-day dataset may pass every structural market-data check while remaining
+insufficient for promotion. Missing days are recorded in provenance and are never filled,
+silently skipped, or replaced with synthetic data.
 
 A gap found while testing the CLI and closed: a validator-generated starter manifest carries
 `source: "UNVERIFIED - fill this in"`, which would otherwise have counted as real data.
 `source_is_verified` now rejects the placeholder, and a test pins it.
 
-Nine `real_market_data` tests exist and **skip** for want of data. Skipping is not passing.
+Ten `real_market_data` tests execute against the interim real dataset: **10 passed**. They
+prove structural real-data validity but correctly leave the minimum-history result false.
 
 ### PART W — download scripts
 
-`scripts/data_sources/settrade_history.py` with a `--probe` mode. Credentials come from the
-environment only; the SDK is imported lazily and is not a project dependency. **No API
-response is fabricated** — without credentials the script explains what is missing and exits 3.
+`scripts/data_sources/settrade_history.py` has probe, one-session diagnostic, standard
+five-to-ten-day acquisition, explicit interim acquisition, and verified-parent extension
+modes. Extension verifies the parent CSV, its manifest, an exact validator pass, and every
+raw checksum before making two session requests. It publishes a new raw directory and a new
+five-day normalized dataset atomically; it never rewrites the four-day parent. Credentials
+come from the environment only; the SDK is imported lazily and is not a project dependency. **No API
+response is fabricated**. An explicitly requested unavailable session fails immediately.
 
 ### PART Y — source verification statuses
 
@@ -208,74 +244,54 @@ exchange fee and the broker commission remain `UNKNOWN`.
 ## Verification
 
 ```text
-uv run pytest tests/tfex          365 passed, 9 skipped
-uv run pytest -m anti_repaint      13 passed, 2 skipped
-uv run pytest -m real_market_data   9 skipped   <-- the blocker, visible in the suite
+uv run pytest tests/tfex          489 passed, 1 skipped
+uv run pytest -m anti_repaint      20 passed, 470 deselected
+uv run pytest -m real_market_data  10 passed, 480 deselected
 uv run ruff check .                All checks passed
-uv run ruff format --check .       93 files already formatted
-uv run mypy .                      Success - 91 source files
+uv run ruff format --check .       108 files already formatted
+uv run mypy .                      Success - 105 source files
 uv run python scripts/validate_calendar_data.py --year 2026   PASS (all 9 proofs)
 uv run python scripts/import_tfex_contracts.py                0 conflicts
 ```
 
-The 2 skipped anti-repaint tests are the real-data ones. They are the gate, working.
+The one skipped TFEX test is the optional installed-SDK signature check. The real-data tests
+execute against the four-day interim dataset; their success does not waive the fifth day.
 
 ---
 
-## Exactly what the operator must provide
+## Exact remaining operator workflow
 
-### Option A — Settrade Open API (preferred; likely free with an existing account)
+The operator runs one read-only extension command from the repository root in the existing
+credentialed PowerShell session. It requests only the 2026-09-14 morning and afternoon
+sessions. A partial/empty response, checksum discrepancy, overlap, duplicate, wrong symbol,
+or validator failure publishes nothing and leaves the parent untouched.
 
-1. Identify the broker and confirm it is on
-   <https://developer.settrade.com/open-api/document/broker-list>.
-2. Export credentials in your shell — never into a file in this repository:
-   ```bash
-   export SETTRADE_APP_ID=...
-   export SETTRADE_APP_SECRET=...
-   export SETTRADE_BROKER_ID=...
-   export SETTRADE_APP_CODE=...
-   ```
-3. Install the optional SDK and run the capability probe (one read-only call, no orders):
-   ```bash
-   uv add --dev settrade-v2
-   uv run python scripts/data_sources/settrade_history.py --probe --symbol S50Z26
-   ```
-   It writes `backend/data/tfex/official/settrade_capability.json` answering the three open
-   questions: are S50 contract symbols served, is `1m` accepted, how far back does it go.
-4. If confirmed, download two contracts (the gate prefers two, to prove contract isolation):
-   ```bash
-   uv run python scripts/data_sources/settrade_history.py --symbol S50U26 --interval 1m \
-       --start 2026-06-01 --end 2026-08-21
-   uv run python scripts/data_sources/settrade_history.py --symbol S50Z26 --interval 1m \
-       --start 2026-06-01 --end 2026-08-21
-   ```
-
-### Option B — SET / SETSMART
-
-Purchase or request the data, place the original files under
-`backend/data/tfex/historical/raw/<SYMBOL>/`, and record source, authority and licence in the
-manifest beside each file.
-
-### Then, either way
-
-```bash
-uv run python scripts/validate_tfex_market_data.py \
-    --file backend/data/tfex/historical/raw/S50Z26/<file>.csv \
-    --symbol S50Z26 --interval 1m --timezone Asia/Bangkok
-uv run pytest -m real_market_data
+```powershell
+uv run --directory backend --with "settrade-v2==2.2.1" python scripts/data_sources/settrade_history.py --symbol S50U26 --interval 1m --start 2026-09-14 --end 2026-09-14 --limit 200 --request-delay-seconds 1.1 --environment prod --extend-parent data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-11_INTERIM.csv --parent-normalized-sha256 d15558d1268b9e5228b860127344f38a7affb428315c7b770c43d00bbb58c424
 ```
 
-When those pass on a non-synthetic dataset the decision becomes `READY_FOR_TFEX2` and TFEX-2
-implementation can begin.
+Expected new normalized file:
+`backend/data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-14.csv`.
+It must contain exactly 1,775 bars on the five explicitly recorded trading dates.
+
+After acquisition, run the validator and real-data tests separately:
+
+```powershell
+uv run --directory backend python scripts/validate_tfex_market_data.py --file data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-14.csv --symbol S50U26 --interval 1m --timezone Asia/Bangkok --json data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-14.validation.json
+uv run --directory backend pytest -m real_market_data
+```
+
+Only an exact validator PASS, passing real-market tests, five complete dates, and valid
+parent/raw/normalized checksums may change the decision to `READY_FOR_TFEX2`. This task
+establishes readiness only; it does not start TFEX-2.
 
 ### Also outstanding (does not block TFEX-2)
 
-1. **Configure Git identity** so the baseline becomes a real commit (`docs/baseline_manifest.md`).
-2. **Import the 2027 holiday calendar** when TFEX publishes it; until then S50H27 and S50M27
+1. **Import the 2027 holiday calendar** when TFEX publishes it; until then S50H27 and S50M27
    have no cross-checked expiry and anything reaching into 2027 fails closed.
-3. **Verify the actual exchange fee and broker commission** against a statement. Until then
+2. **Verify the actual exchange fee and broker commission** against a statement. Until then
    every cost figure is a labelled assumption.
-4. **Confirm shortened-session announcements** — the annual trading calendar page was not
+3. **Confirm shortened-session announcements** — the annual trading calendar page was not
    retrieved, so early closes are unverified.
 
 ---

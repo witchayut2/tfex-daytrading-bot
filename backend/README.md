@@ -2,7 +2,9 @@
 
 Backend for the TFEX SET50 Index Futures research and paper-trading platform.
 Specification: `../CLAUDE.md` and `../CLAUDE_TFEX.md`. Architecture: `../docs/tfex_architecture.md`.
-Current gate decision: `../docs/tfex_data_readiness_gate.md` — **`BLOCKED_REAL_MARKET_DATA`**.
+Current gate decision: `../docs/tfex_data_readiness_gate.md` —
+**`BLOCKED_MINIMUM_REAL_HISTORY`**. Four complete real S50U26 1-minute days are validated;
+the unchanged minimum is five. TFEX-2 is not started.
 
 **Paper trading only.** There is no live order route, and `config/tfex.yaml` cannot enable one.
 
@@ -20,7 +22,7 @@ uv sync
 ```bash
 uv run pytest tests/tfex             # full suite
 uv run pytest -m anti_repaint        # the non-repainting invariants only
-uv run pytest -m real_market_data    # skips until a real dataset is present
+uv run pytest -m real_market_data    # validates local real data; history sufficiency is separate
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy .
@@ -35,11 +37,9 @@ uv run python scripts/import_tfex_contracts.py
 uv run python scripts/validate_calendar_data.py --year 2026
 uv run python scripts/update_source_verification.py --corroborate-spec
 
-# market data
-uv run python scripts/data_sources/settrade_history.py --probe --symbol S50Z26
-uv run python scripts/validate_tfex_market_data.py \
-    --file data/tfex/historical/raw/S50Z26/<file>.csv \
-    --symbol S50Z26 --interval 1m --timezone Asia/Bangkok
+# market data: use the exact read-only acquisition/validation commands in the canonical docs
+# ../docs/tfex_historical_data_sources.md
+# ../docs/tfex_data_readiness_gate.md
 ```
 
 Validator exit codes: `0` PASS, `1` PASS_WITH_WARNINGS, `2` REJECTED,
@@ -51,7 +51,7 @@ Validator exit codes: `0` PASS, `1` PASS_WITH_WARNINGS, `2` REJECTED,
 | --- | --- |
 | TFEX holidays | **2026 imported and verified** (20 holidays). 2025 and 2027 unavailable from the source; the calendar fails closed for them. |
 | SET50 contract calendar | **6 contracts imported**; the four 2026 contracts cross-checked against the derived rule with zero conflicts. |
-| 1-minute market data | **None.** See `../docs/tfex_historical_data_sources.md`. |
+| 1-minute market data | **S50U26, four complete days, 1,420 rows, real-data validated.** The five-day minimum remains blocked. |
 
 Credentials are never stored here. The Settrade downloader reads `SETTRADE_APP_ID`,
 `SETTRADE_APP_SECRET`, `SETTRADE_BROKER_ID` and `SETTRADE_APP_CODE` from the environment and
@@ -74,7 +74,7 @@ app/tfex/
 config/tfex.yaml     the configuration
 data/tfex/official/  immutable raw captures of exchange metadata + provenance
 data/tfex/holidays/  per-year calendar files the platform reads
-data/tfex/historical/ raw market data (empty) and normalized output
+data/tfex/historical/ ignored licensed raw data, normalized derivatives, and atomic staging
 scripts/             operator tools
-tests/tfex/          374 tests; fixture holiday dates are invented, not TFEX data
+tests/tfex/          TFEX unit, anti-repaint, and real-market acceptance tests
 ```

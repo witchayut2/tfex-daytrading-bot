@@ -1,5 +1,22 @@
 # CODEX HANDOFF — TFEX Project
 
+## Current-state note — 2026-09-14
+
+The sections below are the original migration handoff and are retained as provenance. The
+repository has advanced: S50U26 one-minute data for four complete days (1,420 rows) is
+`REAL_DATA_VALIDATED`, while the unchanged five-day minimum leaves the current decision
+`BLOCKED_MINIMUM_REAL_HISTORY` and TFEX-2 `NOT STARTED`.
+
+The future risk/order/position contract is now locked in
+`docs/tfex_risk_order_position_contract.md` with dormant deterministic unit scaffolding.
+The future research protocol is likewise locked in
+`docs/tfex_strategy_research_validation_protocol.md`. Neither starts TFEX-2/4/5, configures
+numerical thresholds, calibrates a strategy, or adds a broker order route. The safe
+five-day extension workflow is prepared but has not been run. Licensed captures and the
+sanitized operator/application-specific capability result remain local and ignored by Git.
+Current QA and next operator action live in `docs/development_status.md`; those current
+repository facts supersede the historical figures below.
+
 ## Purpose
 This file transfers the existing project from Claude Code to OpenAI Codex in VS Code without restarting the project.
 
