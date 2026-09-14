@@ -24,8 +24,10 @@ import pytest
 
 from app.tfex.calendar import HolidayStore, TradingCalendar
 from app.tfex.config import TfexConfig, load_config
-from app.tfex.errors import ConfigurationError
-from app.tfex.marketdata.acceptance import assess_tfex2_status
+from app.tfex.errors import ConfigurationError, RealMarketDataValidationRequired
+from app.tfex.feeds.base import ReplayStatus
+from app.tfex.feeds.csv_feed import load_csv_replay_input
+from app.tfex.marketdata.acceptance import assess_tfex2_status, mark_tfex2_complete
 from app.tfex.marketdata.csv_loader import LoadResult, load_bars
 from app.tfex.marketdata.manifest import HISTORICAL_NORMALIZED_ROOT, file_sha256, load_manifest
 from app.tfex.marketdata.models import (
@@ -34,7 +36,10 @@ from app.tfex.marketdata.models import (
     ValidationOutcome,
     ValidationReport,
 )
+from app.tfex.marketdata.replay import ReplayEngine, ReplayRun, replay_digest
 from app.tfex.marketdata.validation import MarketDataValidator
+from app.tfex.sessions.boundaries import ContinuousSession
+from app.tfex.sessions.engine import SessionEngine
 
 _DATA_SUFFIXES = (".csv", ".txt")
 
@@ -256,14 +261,137 @@ def test_validation_is_deterministic(
     assert first.outcome is second.outcome
 
 
-# --- 3-5, 10-12: awaiting the TFEX-2 replay engine ----------------------------------------
-#
-# These acceptance tests cannot be written until the engine exists. Listed rather than
-# stubbed, so they are added when it lands:
-#
-#   3.  build TFEX session-aware 1m bars from the raw dataset
-#   4.  derive 5m bars and verify TFEX-aligned buckets
-#   5.  derive 15m bars and verify the afternoon bucket starts at 13:45
-#   10. run the replay deterministically twice
-#   11. compare the replay hash across the two runs
-#   12. incremental equivalence: prefix calculation == one-candle-at-a-time replay
+# --- 3-5, 10-12: TFEX-2 replay acceptance -----------------------------------------------
+
+
+def _validated_replay(
+    dataset: tuple[Path, DatasetManifest],
+    config: TfexConfig,
+    calendar: TradingCalendar,
+) -> ReplayRun:
+    _, report = _report(dataset, config, calendar)
+    assert report.outcome is ValidationOutcome.PASS, report.render_text()
+    path, _ = dataset
+    return ReplayEngine.from_csv(
+        path,
+        SessionEngine(config, calendar),
+        require_real=True,
+    ).run_to_end()
+
+
+def test_real_1m_bars_replay_with_manifest_identity(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    run = _validated_replay(dataset, real_config, real_calendar)
+    _, manifest = dataset
+    assert run.source_bar_count == manifest.record_count
+    assert run.dataset_id == manifest.dataset_id
+    assert run.dataset_sha256 == manifest.sha256
+    assert {frame.event.bar.symbol for frame in run.frames} == {manifest.symbol}
+    assert all(
+        frame.event.continuous_session in {ContinuousSession.MORNING, ContinuousSession.AFTERNOON}
+        for frame in run.frames
+    )
+
+
+def test_real_5m_aggregation_is_tfex_session_aligned(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    run = _validated_replay(dataset, real_config, real_calendar)
+    _, manifest = dataset
+    days = manifest.complete_trading_days or manifest.trading_days
+    assert days is not None
+    assert len(run.confirmed_5m) == days * 71
+    assert all(bar.source_bar_count == 5 for bar in run.confirmed_5m)
+    assert all(bar.open_time.date() == bar.close_time.date() for bar in run.confirmed_5m)
+    assert all(bar.open_time.minute % 5 == 0 for bar in run.confirmed_5m)
+
+
+def test_real_15m_aggregation_reanchors_at_afternoon_open(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    run = _validated_replay(dataset, real_config, real_calendar)
+    _, manifest = dataset
+    days = manifest.complete_trading_days or manifest.trading_days
+    assert days is not None
+    assert len(run.confirmed_15m) == days * 24
+    afternoons = [bar for bar in run.confirmed_15m if bar.session is ContinuousSession.AFTERNOON]
+    assert len(afternoons) == days * 13
+    assert all(bar.open_time.time().minute % 15 == 0 for bar in afternoons)
+    tails = [bar for bar in afternoons if bar.is_short_session_close_bucket]
+    assert len(tails) == days
+    assert all(bar.source_bar_count == 10 for bar in tails)
+
+
+@pytest.mark.anti_repaint
+def test_real_replay_is_deterministic_with_matching_hash(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    first = _validated_replay(dataset, real_config, real_calendar)
+    second = _validated_replay(dataset, real_config, real_calendar)
+    assert first.frames == second.frames
+    assert first.digest == second.digest
+
+
+@pytest.mark.anti_repaint
+def test_real_batch_and_one_bar_incremental_replay_are_equivalent(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    batch = _validated_replay(dataset, real_config, real_calendar)
+    path, _ = dataset
+    incremental = ReplayEngine.from_csv(
+        path,
+        SessionEngine(real_config, real_calendar),
+        require_real=True,
+    )
+    incremental.start()
+    frames = []
+    while incremental.status is ReplayStatus.RUNNING:
+        frame = incremental.next_event()
+        if frame is not None:
+            frames.append(frame)
+    assert tuple(frames) == batch.frames
+    assert replay_digest(frames) == batch.digest
+
+
+@pytest.mark.anti_repaint
+def test_real_replay_prefix_is_stable(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    full = _validated_replay(dataset, real_config, real_calendar)
+    path, _ = dataset
+    source = load_csv_replay_input(path, require_real=True)
+    prefix_length = min(420, len(source.bars))
+    prefix = ReplayEngine(
+        source.bars[:prefix_length],
+        SessionEngine(real_config, real_calendar),
+    ).run_to_end()
+    assert prefix.frames == full.frames[:prefix_length]
+
+
+def test_only_minimum_history_real_replay_can_complete_tfex2(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    _, report = _report(dataset, real_config, real_calendar)
+    run = _validated_replay(dataset, real_config, real_calendar)
+    _, manifest = dataset
+    if manifest.minimum_dataset_requirement_met is True:
+        evidence = mark_tfex2_complete([report], [run])
+        assert evidence.minimum_history_requirement_met
+    else:
+        with pytest.raises(RealMarketDataValidationRequired, match="minimum five"):
+            mark_tfex2_complete([report], [run])

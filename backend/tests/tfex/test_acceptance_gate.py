@@ -7,6 +7,7 @@ expectations, not that it survives the market.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime
 
 import pytest
@@ -23,6 +24,32 @@ from app.tfex.marketdata.models import (
 )
 
 NOW = datetime(2026, 8, 24, tzinfo=UTC)
+
+
+@dataclass(frozen=True)
+class FakeReplayRun:
+    symbol: str
+    source_bar_count: int
+    frames: tuple[object, ...]
+    confirmed_5m: tuple[object, ...]
+    confirmed_15m: tuple[object, ...]
+    digest: str
+    dataset_id: str | None
+    dataset_sha256: str | None
+
+
+def replay(dataset_id: str, *, rows: int = 355) -> FakeReplayRun:
+    marker = object()
+    return FakeReplayRun(
+        symbol="S50Z26",
+        source_bar_count=rows,
+        frames=(marker,) * rows,
+        confirmed_5m=(marker,),
+        confirmed_15m=(marker,),
+        digest="b" * 64,
+        dataset_id=dataset_id,
+        dataset_sha256="a" * 64,
+    )
 
 
 def dataset(
@@ -100,7 +127,8 @@ def test_no_data_at_all_cannot_mark_tfex2_complete() -> None:
 
 def test_a_validated_real_dataset_promotes_the_milestone() -> None:
     evidence = mark_tfex2_complete(
-        [report("fixture-a", synthetic=True), report("s50z26-1m", synthetic=False)]
+        [report("fixture-a", synthetic=True), report("s50z26-1m", synthetic=False)],
+        [replay("s50z26-1m")],
     )
 
     assert evidence.status is Tfex2Status.REAL_DATA_VALIDATED
@@ -120,7 +148,17 @@ def test_a_rejected_real_dataset_does_not_count() -> None:
 def test_a_real_dataset_with_warnings_still_counts() -> None:
     warned = report("s50z26-1m", synthetic=False, status=CheckStatus.WARNING)
     assert warned.outcome is ValidationOutcome.PASS_WITH_WARNINGS
-    assert mark_tfex2_complete([warned]).real_data_validated
+    assert mark_tfex2_complete([warned], [replay("s50z26-1m")]).real_data_validated
+
+
+def test_data_readiness_without_a_matching_replay_cannot_complete_tfex2() -> None:
+    ready = report("s50z26-1m", synthetic=False)
+    with pytest.raises(RealMarketDataValidationRequired, match="data readiness alone"):
+        mark_tfex2_complete([ready])
+
+    wrong_hash = replace(replay("s50z26-1m"), dataset_sha256="c" * 64)
+    with pytest.raises(RealMarketDataValidationRequired, match="matching real replay"):
+        mark_tfex2_complete([ready], [wrong_hash])
 
 
 def test_valid_four_day_real_dataset_is_interim_and_cannot_complete_tfex2() -> None:

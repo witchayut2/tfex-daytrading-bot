@@ -72,6 +72,10 @@ class ResearchProtocolError(TfexError):
     """
 
 
+class ReplayError(TfexError):
+    """A replay input, cursor operation, or causal market-state invariant failed."""
+
+
 # --- metadata provenance -------------------------------------------------------------
 
 

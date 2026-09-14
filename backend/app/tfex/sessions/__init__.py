@@ -3,6 +3,7 @@
 from app.tfex.sessions.boundaries import (
     EXECUTABLE_STATES,
     STATE_PRECEDENCE,
+    ContinuousSession,
     DaySessionPlan,
     SessionPhase,
     SessionState,
@@ -20,6 +21,7 @@ __all__ = [
     "EXECUTABLE_STATES",
     "STATE_PRECEDENCE",
     "BreakCrossing",
+    "ContinuousSession",
     "DaySessionPlan",
     "SessionEngine",
     "SessionGateDecision",

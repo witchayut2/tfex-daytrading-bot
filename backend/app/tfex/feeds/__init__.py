@@ -1,6 +1,5 @@
-"""Market data feeds (sections 10 and 28). Milestones TFEX-2 and TFEX-7.
+"""TFEX-2 replay events; future TFEX-7 read-only real-time feeds share this boundary."""
 
-Not implemented yet. See the module docstrings for the invariants each part must hold.
-"""
+from app.tfex.feeds.base import MarketEvent, ReplayStatus
 
-__all__: list[str] = []
+__all__ = ["MarketEvent", "ReplayStatus"]

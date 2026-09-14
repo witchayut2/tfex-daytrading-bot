@@ -1,6 +1,7 @@
 """Research continuous series (`CLAUDE_TFEX.md` section 7).
 
-Not implemented — **Milestone TFEX-2**.
+Intentionally not implemented in TFEX-2. The milestone replays one immutable raw contract;
+a derived continuous series belongs to later, explicitly labelled research work.
 
 The rule it must not break, recorded here so it is not rediscovered later: two datasets
 exist, the **raw contract series** (never adjusted, the only thing execution may touch) and

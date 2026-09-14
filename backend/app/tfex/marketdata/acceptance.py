@@ -14,23 +14,54 @@ complete trading days.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Protocol
 
 from app.tfex.errors import RealMarketDataValidationRequired
 from app.tfex.marketdata.models import DatasetManifest, ValidationOutcome, ValidationReport
 
 __all__ = [
     "AcceptanceEvidence",
+    "ReplayAcceptanceRun",
     "Tfex2Status",
     "assess_tfex2_status",
     "mark_tfex2_complete",
 ]
 
 
+class ReplayAcceptanceRun(Protocol):
+    """Minimum reproducible replay result required by the completion guard."""
+
+    @property
+    def symbol(self) -> str: ...
+
+    @property
+    def source_bar_count(self) -> int: ...
+
+    @property
+    def frames(self) -> Sequence[object]: ...
+
+    @property
+    def confirmed_5m(self) -> Sequence[object]: ...
+
+    @property
+    def confirmed_15m(self) -> Sequence[object]: ...
+
+    @property
+    def digest(self) -> str: ...
+
+    @property
+    def dataset_id(self) -> str | None: ...
+
+    @property
+    def dataset_sha256(self) -> str | None: ...
+
+
 class Tfex2Status(StrEnum):
-    """How far TFEX-2 acceptance has actually got."""
+    """How far the real-data prerequisite for TFEX-2 has got."""
 
     NOT_STARTED = "TFEX2_NOT_STARTED"
     FIXTURE_VALIDATED = "TFEX2_FIXTURE_VALIDATED"
@@ -40,8 +71,7 @@ class Tfex2Status(StrEnum):
     """Real market data passed structural validation but not the minimum-history gate."""
 
     REAL_DATA_VALIDATED = "TFEX2_REAL_DATA_VALIDATED"
-    """At least one real contract dataset was validated and replayed. The only state that
-    counts as TFEX-2 complete."""
+    """At least one real contract dataset passed the five-day data-readiness gate."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,13 +181,32 @@ def assess_tfex2_status(reports: Sequence[ValidationReport]) -> AcceptanceEviden
     )
 
 
-def mark_tfex2_complete(reports: Sequence[ValidationReport]) -> AcceptanceEvidence:
+def _has_matching_replay(
+    report: ValidationReport,
+    replay_runs: Sequence[ReplayAcceptanceRun],
+) -> bool:
+    return any(
+        run.dataset_id == report.dataset_id
+        and run.dataset_sha256 == report.sha256
+        and run.symbol == report.symbol
+        and run.source_bar_count == report.row_count
+        and len(run.frames) == report.row_count
+        and bool(run.confirmed_5m)
+        and bool(run.confirmed_15m)
+        and re.fullmatch(r"[0-9a-f]{64}", run.digest) is not None
+        for run in replay_runs
+    )
+
+
+def mark_tfex2_complete(
+    reports: Sequence[ValidationReport],
+    replay_runs: Sequence[ReplayAcceptanceRun] = (),
+) -> AcceptanceEvidence:
     """Declare TFEX-2 complete, or refuse to.
 
     Raises:
         RealMarketDataValidationRequired: no validated non-synthetic dataset meeting the
-            minimum-history requirement was supplied. Fixtures and interim real data cannot
-            promote the milestone.
+            minimum-history requirement and no matching deterministic replay were supplied.
     """
     evidence = assess_tfex2_status(reports)
     if not evidence.real_data_validated:
@@ -167,5 +216,14 @@ def mark_tfex2_complete(reports: Sequence[ValidationReport]) -> AcceptanceEviden
             f"{evidence.status}; real={list(evidence.real_datasets)}, "
             f"synthetic={list(evidence.synthetic_datasets)}, "
             f"rejected={list(evidence.rejected_datasets)}. " + " ".join(evidence.reasons)
+        )
+    qualifying_reports = [
+        report for report in reports if report.dataset_id in evidence.minimum_history_datasets
+    ]
+    if not any(_has_matching_replay(report, replay_runs) for report in qualifying_reports):
+        raise RealMarketDataValidationRequired(
+            "TFEX-2 cannot be marked complete from data readiness alone; supply a matching "
+            "real replay with the same dataset ID/SHA-256/row count, non-empty confirmed "
+            "5m and 15m outputs, and a deterministic digest"
         )
     return evidence

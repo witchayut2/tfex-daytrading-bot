@@ -27,11 +27,19 @@ from app.tfex.config import TfexConfig
 __all__ = [
     "EXECUTABLE_STATES",
     "STATE_PRECEDENCE",
+    "ContinuousSession",
     "DaySessionPlan",
     "SessionPhase",
     "SessionState",
     "build_day_plan",
 ]
+
+
+class ContinuousSession(StrEnum):
+    """The two independent TFEX continuous-trading segments."""
+
+    MORNING = "MORNING"
+    AFTERNOON = "AFTERNOON"
 
 
 class SessionState(StrEnum):
@@ -138,6 +146,22 @@ class DaySessionPlan:
         execution must consult this, not ``state_at``.
         """
         return bool(self.states_at(moment) & EXECUTABLE_STATES)
+
+    def continuous_session_at(self, moment: datetime) -> ContinuousSession | None:
+        """Return the matching continuous segment, including the LTD closing window."""
+        if (
+            self.morning_open_at is not None
+            and self.morning_close_at is not None
+            and self.morning_open_at <= moment < self.morning_close_at
+        ):
+            return ContinuousSession.MORNING
+        if (
+            self.afternoon_open_at is not None
+            and self.afternoon_close_at is not None
+            and self.afternoon_open_at <= moment < self.afternoon_close_at
+        ):
+            return ContinuousSession.AFTERNOON
+        return None
 
     def phase(self, state: SessionState) -> SessionPhase | None:
         for candidate in self.phases:
