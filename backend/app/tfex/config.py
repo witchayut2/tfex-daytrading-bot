@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from datetime import time
 from decimal import Decimal
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self
 
@@ -38,6 +39,8 @@ __all__ = [
     "MarginConfig",
     "MarketConfig",
     "MetadataConfig",
+    "RiskCalibrationStatus",
+    "RiskConfig",
     "RollConfig",
     "SessionsConfig",
     "SymbolConfig",
@@ -288,6 +291,77 @@ class MarginConfig(_Frozen):
     reject_when_stale: bool = True
 
 
+class RiskCalibrationStatus(StrEnum):
+    """Risk thresholds are research inputs, never implied production settings."""
+
+    UNCALIBRATED = "UNCALIBRATED"
+    RESEARCH_ONLY = "RESEARCH_ONLY"
+
+
+class RiskConfig(_Frozen):
+    """Dormant TFEX-4 risk-policy inputs.
+
+    The repository intentionally ships every numerical threshold as ``None``. A future
+    research/backtest step must provide all of them and label the set ``RESEARCH_ONLY``
+    before this contract can approve even a paper proposal. There is no production status.
+    """
+
+    calibration_status: RiskCalibrationStatus = RiskCalibrationStatus.UNCALIBRATED
+    max_risk_per_trade_thb: Money | None = Field(default=None, gt=0)
+    max_daily_realized_loss_thb: Money | None = Field(default=None, gt=0)
+    max_daily_total_loss_thb: Money | None = Field(default=None, gt=0)
+    max_consecutive_losses: int | None = Field(default=None, gt=0)
+    max_contracts: int | None = Field(default=None, gt=0)
+    minimum_acceptable_reward_risk: Money | None = Field(default=None, gt=0)
+    maximum_allowed_slippage_points: Money | None = Field(default=None, ge=0)
+    max_repeated_execution_errors: int | None = Field(default=None, gt=0)
+    daily_kill_switch_enabled: Literal[True] = True
+    pyramiding_enabled: bool = False
+    averaging_down_allowed: Literal[False] = False
+    martingale_allowed: Literal[False] = False
+
+    @property
+    def missing_thresholds(self) -> tuple[str, ...]:
+        names = (
+            "max_risk_per_trade_thb",
+            "max_daily_realized_loss_thb",
+            "max_daily_total_loss_thb",
+            "max_consecutive_losses",
+            "max_contracts",
+            "minimum_acceptable_reward_risk",
+            "maximum_allowed_slippage_points",
+            "max_repeated_execution_errors",
+        )
+        return tuple(name for name in names if getattr(self, name) is None)
+
+    @property
+    def research_configured(self) -> bool:
+        return (
+            self.calibration_status is RiskCalibrationStatus.RESEARCH_ONLY
+            and not self.missing_thresholds
+        )
+
+    @model_validator(mode="after")
+    def _daily_limits_are_ordered(self) -> Self:
+        if (
+            self.max_daily_realized_loss_thb is not None
+            and self.max_daily_total_loss_thb is not None
+            and self.max_daily_total_loss_thb < self.max_daily_realized_loss_thb
+        ):
+            raise ValueError(
+                "max_daily_total_loss_thb must be at least max_daily_realized_loss_thb"
+            )
+        if (
+            self.calibration_status is RiskCalibrationStatus.RESEARCH_ONLY
+            and self.missing_thresholds
+        ):
+            raise ValueError(
+                "RESEARCH_ONLY risk configuration requires every threshold; missing "
+                + ", ".join(self.missing_thresholds)
+            )
+        return self
+
+
 class MetadataConfig(_Frozen):
     """Freshness policy for imported exchange metadata (section 2)."""
 
@@ -335,6 +409,7 @@ class TfexConfig(_Frozen):
     roll: RollConfig = RollConfig()
     costs: CostsConfig = CostsConfig()
     margin: MarginConfig = MarginConfig()
+    risk: RiskConfig = RiskConfig()
     metadata: MetadataConfig = MetadataConfig()
     time_bucket_statistics: TimeBucketStatisticsConfig = TimeBucketStatisticsConfig()
     trading: TradingConfig = TradingConfig()

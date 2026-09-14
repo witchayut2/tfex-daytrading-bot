@@ -47,6 +47,31 @@ class LiveTradingDisabledError(TfexError):
     """
 
 
+class RiskContractError(TfexError):
+    """A risk, protection, or position-management invariant was violated."""
+
+
+class RiskBypassError(RiskContractError):
+    """Something tried to reach execution without an approved risk plan."""
+
+
+class InvalidOrderTransitionError(RiskContractError):
+    """An order/position lifecycle transition was not permitted from its current state."""
+
+
+class PositionProtectionError(RiskContractError):
+    """Filled exposure could not be kept in an explicit protective-risk state."""
+
+
+class ResearchProtocolError(TfexError):
+    """A research, replay, holdout, or acceptance invariant was violated.
+
+    This is deliberately separate from runtime trading errors. Research evidence must fail
+    closed when its chronology, provenance, trial history, execution assumptions, or
+    acceptance prerequisites cannot be proved.
+    """
+
+
 # --- metadata provenance -------------------------------------------------------------
 
 

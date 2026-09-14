@@ -86,6 +86,21 @@ margin: # [RESEARCH] rates themselves come from the margin provider (TFEX-4)
   free_equity_buffer_multiplier: 2.0
   reject_when_stale: true
 
+risk: # [UNCALIBRATED] dormant contract only; TFEX-4 remains not started
+  calibration_status: UNCALIBRATED
+  max_risk_per_trade_thb: null
+  max_daily_realized_loss_thb: null
+  max_daily_total_loss_thb: null
+  max_consecutive_losses: null
+  max_contracts: null
+  minimum_acceptable_reward_risk: null
+  maximum_allowed_slippage_points: null
+  max_repeated_execution_errors: null
+  daily_kill_switch_enabled: true
+  pyramiding_enabled: false
+  averaging_down_allowed: false
+  martingale_allowed: false
+
 metadata:
   version: "1"
   holiday_data_stale_after_days: 180 # [RESEARCH]
