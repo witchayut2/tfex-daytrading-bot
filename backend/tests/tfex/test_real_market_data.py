@@ -1,9 +1,9 @@
 """Acceptance tests that require a real SET50 futures dataset (gate PART U).
 
 Every test here is marked ``real_market_data`` and **skips** when no validated non-synthetic
-dataset is present under ``backend/data/tfex/historical/raw/<SYMBOL>/``. Skipping is not
-passing: `docs/tfex_data_readiness_gate.md` records the milestone status as
-``TFEX2_FIXTURE_VALIDATED`` until these actually run.
+dataset is present under ``backend/data/tfex/historical/normalized/<SYMBOL>/``. Skipping is not
+passing. Structural real-data validity and the minimum-history requirement are deliberately
+reported separately; the current four-day interim dataset proves only the former.
 
 Run them explicitly::
 
@@ -24,8 +24,9 @@ import pytest
 from app.tfex.calendar import HolidayStore, TradingCalendar
 from app.tfex.config import TfexConfig, load_config
 from app.tfex.errors import ConfigurationError
+from app.tfex.marketdata.acceptance import assess_tfex2_status
 from app.tfex.marketdata.csv_loader import LoadResult, load_bars
-from app.tfex.marketdata.manifest import HISTORICAL_RAW_ROOT, file_sha256, load_manifest
+from app.tfex.marketdata.manifest import HISTORICAL_NORMALIZED_ROOT, file_sha256, load_manifest
 from app.tfex.marketdata.models import (
     CheckStatus,
     DatasetManifest,
@@ -38,11 +39,11 @@ _DATA_SUFFIXES = (".csv", ".txt")
 
 
 def discover_datasets() -> list[tuple[Path, DatasetManifest]]:
-    """Every raw file that has a valid, non-synthetic manifest beside it."""
+    """Every normalized file that has a valid, non-synthetic manifest beside it."""
     found: list[tuple[Path, DatasetManifest]] = []
-    if not HISTORICAL_RAW_ROOT.is_dir():
+    if not HISTORICAL_NORMALIZED_ROOT.is_dir():
         return found
-    for path in sorted(HISTORICAL_RAW_ROOT.rglob("*")):
+    for path in sorted(HISTORICAL_NORMALIZED_ROOT.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in _DATA_SUFFIXES:
             continue
         try:
@@ -61,9 +62,9 @@ pytestmark = [
     pytest.mark.skipif(
         not DATASETS,
         reason=(
-            "no real SET50 futures dataset present under data/tfex/historical/raw/. "
-            "See docs/tfex_historical_data_sources.md for how to acquire one; the gate "
-            "status is REAL_1M_DATA_BLOCKED until then."
+            "no real SET50 futures dataset present under data/tfex/historical/normalized/. "
+            "See docs/tfex_historical_data_sources.md for the safe acquisition workflow; "
+            "absence of a dataset cannot satisfy structural or minimum-history readiness."
         ),
     ),
 ]
@@ -152,6 +153,42 @@ def test_the_dataset_passes_validation(
         ValidationOutcome.PASS,
         ValidationOutcome.PASS_WITH_WARNINGS,
     }, report.render_text()
+
+
+def test_real_data_valid_is_distinct_from_minimum_history_requirement(
+    dataset: tuple[Path, DatasetManifest],
+    real_config: TfexConfig,
+    real_calendar: TradingCalendar,
+) -> None:
+    """Four structurally valid real days are evidence, but cannot satisfy a five-day gate."""
+    _, report = _report(dataset, real_config, real_calendar)
+    _, manifest = dataset
+    evidence = assess_tfex2_status([report])
+
+    assert evidence.real_data_valid
+    assert evidence.minimum_history_requirement_met is (
+        manifest.minimum_dataset_requirement_met is True
+    )
+    if manifest.minimum_dataset_requirement_met is not True:
+        assert report.outcome in {
+            ValidationOutcome.PASS,
+            ValidationOutcome.PASS_WITH_WARNINGS,
+        }
+        assert manifest.acquired_complete_trading_days is not None
+        assert manifest.acquired_complete_trading_days < 5
+    else:
+        assert manifest.complete_trading_days == len(manifest.trading_dates)
+        assert manifest.complete_trading_days >= 5
+        assert manifest.acquired_complete_trading_days == manifest.complete_trading_days
+        if manifest.historical_availability_status == ("EXTENDED_REAL_DATASET_MINIMUM_HISTORY_MET"):
+            assert manifest.parent_dataset_id
+            assert manifest.parent_normalized_sha256
+            assert manifest.source_raw_capture_sha256s == tuple(
+                capture.sha256 for capture in manifest.source_captures
+            )
+            assert set(manifest.new_raw_capture_sha256s).issubset(
+                manifest.source_raw_capture_sha256s
+            )
 
 
 # --- 6-9. the invariants that must hold on real data --------------------------------------

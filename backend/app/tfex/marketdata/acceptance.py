@@ -6,9 +6,10 @@ demonstrate that the platform handles *the actual market*: real SET50 futures da
 minutes, feed gaps, off-tick prints and holidays nobody remembered, and a fixture author
 writes none of those by accident.
 
-So the two are kept apart by type, and the promotion to
-:data:`Tfex2Status.REAL_DATA_VALIDATED` refuses to happen without at least one validated,
-non-synthetic dataset.
+So the two are kept apart by type. Structurally valid real data is also kept separate from
+the minimum-history requirement: an interim dataset is evidence about the feed, but cannot
+promote :data:`Tfex2Status.REAL_DATA_VALIDATED` until its manifest proves at least five
+complete trading days.
 """
 
 from __future__ import annotations
@@ -35,6 +36,9 @@ class Tfex2Status(StrEnum):
     FIXTURE_VALIDATED = "TFEX2_FIXTURE_VALIDATED"
     """Everything passes on synthetic fixtures. Necessary, and not sufficient."""
 
+    INTERIM_REAL_DATA_VALIDATED = "TFEX2_INTERIM_REAL_DATA_VALIDATED"
+    """Real market data passed structural validation but not the minimum-history gate."""
+
     REAL_DATA_VALIDATED = "TFEX2_REAL_DATA_VALIDATED"
     """At least one real contract dataset was validated and replayed. The only state that
     counts as TFEX-2 complete."""
@@ -46,6 +50,8 @@ class AcceptanceEvidence:
 
     status: Tfex2Status
     real_datasets: tuple[str, ...]
+    minimum_history_datasets: tuple[str, ...]
+    interim_real_datasets: tuple[str, ...]
     synthetic_datasets: tuple[str, ...]
     rejected_datasets: tuple[str, ...]
     reasons: tuple[str, ...]
@@ -54,14 +60,37 @@ class AcceptanceEvidence:
     def real_data_validated(self) -> bool:
         return self.status is Tfex2Status.REAL_DATA_VALIDATED
 
+    @property
+    def real_data_valid(self) -> bool:
+        """At least one structurally valid, non-synthetic dataset was supplied."""
+        return bool(self.real_datasets)
+
+    @property
+    def minimum_history_requirement_met(self) -> bool:
+        return bool(self.minimum_history_datasets)
+
 
 def _manifest_of(report: ValidationReport) -> DatasetManifest | None:
     return report.manifest
 
 
+def _minimum_history_is_proven(manifest: DatasetManifest) -> bool:
+    """Require explicit dates/counts rather than trusting a lone boolean assertion."""
+    return bool(
+        manifest.minimum_dataset_requirement_met is True
+        and manifest.acquired_complete_trading_days is not None
+        and manifest.acquired_complete_trading_days >= 5
+        and manifest.complete_trading_days is not None
+        and manifest.complete_trading_days >= 5
+        and len(manifest.trading_dates) == manifest.complete_trading_days
+    )
+
+
 def assess_tfex2_status(reports: Sequence[ValidationReport]) -> AcceptanceEvidence:
     """Classify the evidence without raising, for reporting and dashboards."""
     real: list[str] = []
+    minimum_history: list[str] = []
+    interim_real: list[str] = []
     synthetic: list[str] = []
     rejected: list[str] = []
     reasons: list[str] = []
@@ -82,6 +111,14 @@ def assess_tfex2_status(reports: Sequence[ValidationReport]) -> AcceptanceEviden
             continue
         if manifest.is_real_market_data:
             real.append(report.dataset_id)
+            if _minimum_history_is_proven(manifest):
+                minimum_history.append(report.dataset_id)
+            else:
+                interim_real.append(report.dataset_id)
+                reasons.append(
+                    f"{report.dataset_id}: real data is structurally valid, but the "
+                    "minimum five-complete-trading-day requirement is not met"
+                )
         else:
             synthetic.append(report.dataset_id)
             why = (
@@ -89,8 +126,10 @@ def assess_tfex2_status(reports: Sequence[ValidationReport]) -> AcceptanceEviden
             )
             reasons.append(f"{report.dataset_id}: {why}, cannot satisfy acceptance")
 
-    if real:
+    if minimum_history:
         status = Tfex2Status.REAL_DATA_VALIDATED
+    elif interim_real:
+        status = Tfex2Status.INTERIM_REAL_DATA_VALIDATED
     elif synthetic:
         status = Tfex2Status.FIXTURE_VALIDATED
         reasons.append(
@@ -104,6 +143,8 @@ def assess_tfex2_status(reports: Sequence[ValidationReport]) -> AcceptanceEviden
     return AcceptanceEvidence(
         status=status,
         real_datasets=tuple(real),
+        minimum_history_datasets=tuple(minimum_history),
+        interim_real_datasets=tuple(interim_real),
         synthetic_datasets=tuple(synthetic),
         rejected_datasets=tuple(rejected),
         reasons=tuple(reasons),
@@ -114,14 +155,15 @@ def mark_tfex2_complete(reports: Sequence[ValidationReport]) -> AcceptanceEviden
     """Declare TFEX-2 complete, or refuse to.
 
     Raises:
-        RealMarketDataValidationRequired: no validated non-synthetic dataset was supplied.
-            This is the hard guard: fixtures alone can never promote the milestone.
+        RealMarketDataValidationRequired: no validated non-synthetic dataset meeting the
+            minimum-history requirement was supplied. Fixtures and interim real data cannot
+            promote the milestone.
     """
     evidence = assess_tfex2_status(reports)
     if not evidence.real_data_validated:
         raise RealMarketDataValidationRequired(
             "TFEX-2 cannot be marked complete without at least one validated real market-data "
-            "set. Status is "
+            "set meeting the minimum five-complete-trading-day requirement. Status is "
             f"{evidence.status}; real={list(evidence.real_datasets)}, "
             f"synthetic={list(evidence.synthetic_datasets)}, "
             f"rejected={list(evidence.rejected_datasets)}. " + " ".join(evidence.reasons)

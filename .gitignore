@@ -15,6 +15,17 @@ build/
 .env
 .env.local
 
+# Locally acquired market data is potentially licensed. Keep raw captures, normalized
+# derivatives, and their adjacent manifests out of Git until storage/redistribution terms
+# have been established. An operator may force-add later only after that review.
+backend/data/tfex/historical/.staging/
+backend/data/tfex/historical/raw/
+backend/data/tfex/historical/normalized/
+
+# This sanitized probe result is operator/application-specific evidence, not a universal
+# SDK fact. Keep it local; universal API facts belong in tests and documentation.
+backend/data/tfex/official/settrade_capability.json
+
 # Editors
 .idea/
 .vscode/

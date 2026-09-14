@@ -12,6 +12,7 @@ its own status and its own findings.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
@@ -29,11 +30,13 @@ __all__ = [
     "BarInterval",
     "CheckResult",
     "CheckStatus",
+    "DatasetDateRange",
     "DatasetManifest",
     "Finding",
     "MissingRange",
     "MissingRangeKind",
     "SessionMembership",
+    "SourceCapture",
     "ValidationOutcome",
     "ValidationReport",
 ]
@@ -188,6 +191,36 @@ class ValidationOutcome(StrEnum):
         }[self.value]
 
 
+class SourceCapture(BaseModel):
+    """One immutable provider response contributing to a normalized dataset."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    file: str
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    endpoint: str
+    requested_start: str
+    requested_end: str
+    requested_limit: int = Field(gt=0)
+    normalized: bool
+    record_count: int = Field(ge=0)
+
+
+class DatasetDateRange(BaseModel):
+    """Inclusive calendar range recorded in acquisition provenance."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    start: date
+    end: date
+
+    @model_validator(mode="after")
+    def _ordered(self) -> Self:
+        if self.end < self.start:
+            raise ValueError("dataset date-range end precedes start")
+        return self
+
+
 class DatasetManifest(BaseModel):
     """Provenance for one market-data file (section 30, and the gate's PART T).
 
@@ -215,6 +248,23 @@ class DatasetManifest(BaseModel):
     trading_days: int | None = Field(default=None, ge=0)
     validation_status: str | None = None
     validator_version: str | None = None
+    broker: str | None = None
+    sdk_version: str | None = None
+    source_captures: tuple[SourceCapture, ...] = ()
+    historical_availability_status: str | None = None
+    requested_date_range: DatasetDateRange | None = None
+    acquired_date_range: DatasetDateRange | None = None
+    requested_trading_days: int | None = Field(default=None, ge=0)
+    acquired_complete_trading_days: int | None = Field(default=None, ge=0)
+    unavailable_dates: tuple[date, ...] = ()
+    retention_boundary_observed: bool | None = None
+    minimum_dataset_requirement_met: bool | None = None
+    parent_dataset_id: str | None = None
+    parent_normalized_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    source_raw_capture_sha256s: tuple[str, ...] = ()
+    new_raw_capture_sha256s: tuple[str, ...] = ()
+    trading_dates: tuple[date, ...] = ()
+    complete_trading_days: int | None = Field(default=None, ge=0)
 
     synthetic: bool = False
     """True for anything generated rather than observed. Section-level rule: synthetic data
@@ -234,6 +284,58 @@ class DatasetManifest(BaseModel):
             and self.last_timestamp < self.first_timestamp
         ):
             raise ValueError("last_timestamp precedes first_timestamp")
+        if (
+            self.requested_date_range is not None
+            and self.acquired_date_range is not None
+            and (
+                self.acquired_date_range.start < self.requested_date_range.start
+                or self.acquired_date_range.end > self.requested_date_range.end
+            )
+        ):
+            raise ValueError("acquired_date_range lies outside requested_date_range")
+        if (
+            self.requested_trading_days is not None
+            and self.acquired_complete_trading_days is not None
+            and self.acquired_complete_trading_days > self.requested_trading_days
+        ):
+            raise ValueError("acquired_complete_trading_days exceeds requested_trading_days")
+        if self.retention_boundary_observed and not self.unavailable_dates:
+            raise ValueError("retention boundary observation requires unavailable_dates")
+        if self.minimum_dataset_requirement_met is True and (
+            self.acquired_complete_trading_days is None or self.acquired_complete_trading_days < 5
+        ):
+            raise ValueError(
+                "minimum_dataset_requirement_met requires at least five complete trading days"
+            )
+        if (self.parent_dataset_id is None) != (self.parent_normalized_sha256 is None):
+            raise ValueError(
+                "parent_dataset_id and parent_normalized_sha256 must be recorded together"
+            )
+        for field_name in ("source_raw_capture_sha256s", "new_raw_capture_sha256s"):
+            values: tuple[str, ...] = getattr(self, field_name)
+            if any(re.fullmatch(r"[0-9a-f]{64}", value) is None for value in values):
+                raise ValueError(f"{field_name} contains an invalid SHA-256")
+            if len(values) != len(set(values)):
+                raise ValueError(f"{field_name} contains duplicate SHA-256 values")
+        capture_hashes = tuple(capture.sha256 for capture in self.source_captures)
+        if self.source_raw_capture_sha256s and self.source_raw_capture_sha256s != capture_hashes:
+            raise ValueError(
+                "source_raw_capture_sha256s must match source_captures in lineage order"
+            )
+        if not set(self.new_raw_capture_sha256s).issubset(self.source_raw_capture_sha256s):
+            raise ValueError("new_raw_capture_sha256s must be a subset of all source raw captures")
+        if self.trading_dates != tuple(sorted(set(self.trading_dates))):
+            raise ValueError("trading_dates must be unique and ordered")
+        if self.complete_trading_days is not None and (
+            self.complete_trading_days != len(self.trading_dates)
+        ):
+            raise ValueError("complete_trading_days must equal the number of trading_dates")
+        if (
+            self.acquired_complete_trading_days is not None
+            and self.complete_trading_days is not None
+            and self.acquired_complete_trading_days != self.complete_trading_days
+        ):
+            raise ValueError("acquired_complete_trading_days and complete_trading_days must agree")
         return self
 
     @property

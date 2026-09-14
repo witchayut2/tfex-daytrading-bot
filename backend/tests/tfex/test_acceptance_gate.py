@@ -7,7 +7,7 @@ expectations, not that it survives the market.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 
@@ -26,8 +26,14 @@ NOW = datetime(2026, 8, 24, tzinfo=UTC)
 
 
 def dataset(
-    dataset_id: str, *, synthetic: bool, source: str = "Settrade Open API"
+    dataset_id: str,
+    *,
+    synthetic: bool,
+    source: str = "Settrade Open API",
+    minimum_history_met: bool | None = None,
 ) -> DatasetManifest:
+    if minimum_history_met is None:
+        minimum_history_met = not synthetic
     return DatasetManifest(
         dataset_id=dataset_id,
         source="unit-test fixture" if synthetic else source,
@@ -37,12 +43,30 @@ def dataset(
         interval=BarInterval.ONE_MINUTE,
         source_timezone="Asia/Bangkok",
         record_count=355,
+        acquired_complete_trading_days=5 if minimum_history_met else None,
+        minimum_dataset_requirement_met=minimum_history_met,
+        trading_dates=(
+            (
+                date(2026, 9, 7),
+                date(2026, 9, 8),
+                date(2026, 9, 9),
+                date(2026, 9, 10),
+                date(2026, 9, 11),
+            )
+            if minimum_history_met
+            else ()
+        ),
+        complete_trading_days=5 if minimum_history_met else None,
         synthetic=synthetic,
     )
 
 
 def report(
-    dataset_id: str, *, synthetic: bool, status: CheckStatus = CheckStatus.PASS
+    dataset_id: str,
+    *,
+    synthetic: bool,
+    status: CheckStatus = CheckStatus.PASS,
+    minimum_history_met: bool | None = None,
 ) -> ValidationReport:
     return ValidationReport(
         dataset_id=dataset_id,
@@ -54,7 +78,11 @@ def report(
         checks=(CheckResult("everything", status, "fixture"),),
         validator_version="test",
         generated_at=NOW,
-        manifest=dataset(dataset_id, synthetic=synthetic),
+        manifest=dataset(
+            dataset_id,
+            synthetic=synthetic,
+            minimum_history_met=minimum_history_met,
+        ),
     )
 
 
@@ -93,6 +121,57 @@ def test_a_real_dataset_with_warnings_still_counts() -> None:
     warned = report("s50z26-1m", synthetic=False, status=CheckStatus.WARNING)
     assert warned.outcome is ValidationOutcome.PASS_WITH_WARNINGS
     assert mark_tfex2_complete([warned]).real_data_validated
+
+
+def test_valid_four_day_real_dataset_is_interim_and_cannot_complete_tfex2() -> None:
+    interim = report(
+        "s50u26-four-days",
+        synthetic=False,
+        minimum_history_met=False,
+    )
+
+    evidence = assess_tfex2_status([interim])
+
+    assert evidence.status is Tfex2Status.INTERIM_REAL_DATA_VALIDATED
+    assert evidence.real_data_valid
+    assert not evidence.minimum_history_requirement_met
+    assert evidence.real_datasets == ("s50u26-four-days",)
+    assert evidence.interim_real_datasets == ("s50u26-four-days",)
+    with pytest.raises(RealMarketDataValidationRequired, match="minimum five"):
+        mark_tfex2_complete([interim])
+
+
+def test_a_boolean_without_explicit_five_day_dates_cannot_satisfy_the_gate() -> None:
+    manifest = DatasetManifest(
+        dataset_id="unsupported-boolean-only-claim",
+        source="Settrade Open API",
+        original_filename="unsupported.csv",
+        sha256="a" * 64,
+        symbol="S50U26",
+        interval=BarInterval.ONE_MINUTE,
+        source_timezone="Asia/Bangkok",
+        record_count=1775,
+        acquired_complete_trading_days=5,
+        minimum_dataset_requirement_met=True,
+        synthetic=False,
+    )
+    unsupported = ValidationReport(
+        dataset_id=manifest.dataset_id,
+        symbol=manifest.symbol,
+        interval=manifest.interval,
+        file_path=manifest.original_filename,
+        sha256=manifest.sha256,
+        row_count=manifest.record_count,
+        checks=(CheckResult("everything", CheckStatus.PASS, "fixture"),),
+        validator_version="test",
+        generated_at=NOW,
+        manifest=manifest,
+    )
+
+    evidence = assess_tfex2_status([unsupported])
+
+    assert evidence.status is Tfex2Status.INTERIM_REAL_DATA_VALIDATED
+    assert not evidence.minimum_history_requirement_met
 
 
 def test_a_dataset_without_a_manifest_cannot_count_as_real() -> None:

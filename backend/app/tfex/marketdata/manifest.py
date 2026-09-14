@@ -12,13 +12,19 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from pydantic import ValidationError
 
 from app.tfex.errors import ConfigurationError
-from app.tfex.marketdata.models import Bar, BarInterval, DatasetManifest
+from app.tfex.marketdata.models import (
+    Bar,
+    BarInterval,
+    DatasetDateRange,
+    DatasetManifest,
+    SourceCapture,
+)
 
 __all__ = [
     "HISTORICAL_NORMALIZED_ROOT",
@@ -63,6 +69,26 @@ def build_manifest(
     authority: str | None = None,
     license: str | None = None,
     retrieved_at: datetime | None = None,
+    normalized_timezone: str = "UTC",
+    validation_status: str | None = None,
+    validator_version: str | None = None,
+    broker: str | None = None,
+    sdk_version: str | None = None,
+    source_captures: tuple[SourceCapture, ...] = (),
+    historical_availability_status: str | None = None,
+    requested_date_range: DatasetDateRange | None = None,
+    acquired_date_range: DatasetDateRange | None = None,
+    requested_trading_days: int | None = None,
+    acquired_complete_trading_days: int | None = None,
+    unavailable_dates: tuple[date, ...] = (),
+    retention_boundary_observed: bool | None = None,
+    minimum_dataset_requirement_met: bool | None = None,
+    parent_dataset_id: str | None = None,
+    parent_normalized_sha256: str | None = None,
+    source_raw_capture_sha256s: tuple[str, ...] = (),
+    new_raw_capture_sha256s: tuple[str, ...] = (),
+    trading_dates: tuple[date, ...] = (),
+    complete_trading_days: int | None = None,
     synthetic: bool = False,
     note: str | None = None,
 ) -> DatasetManifest:
@@ -80,10 +106,30 @@ def build_manifest(
         symbol=symbol.strip().upper(),
         interval=interval,
         source_timezone=source_timezone,
+        normalized_timezone=normalized_timezone,
         record_count=len(ordered),
         first_timestamp=ordered[0].timestamp if ordered else None,
         last_timestamp=ordered[-1].timestamp if ordered else None,
         trading_days=len({b.trading_date for b in ordered}) or None,
+        validation_status=validation_status,
+        validator_version=validator_version,
+        broker=broker,
+        sdk_version=sdk_version,
+        source_captures=source_captures,
+        historical_availability_status=historical_availability_status,
+        requested_date_range=requested_date_range,
+        acquired_date_range=acquired_date_range,
+        requested_trading_days=requested_trading_days,
+        acquired_complete_trading_days=acquired_complete_trading_days,
+        unavailable_dates=unavailable_dates,
+        retention_boundary_observed=retention_boundary_observed,
+        minimum_dataset_requirement_met=minimum_dataset_requirement_met,
+        parent_dataset_id=parent_dataset_id,
+        parent_normalized_sha256=parent_normalized_sha256,
+        source_raw_capture_sha256s=source_raw_capture_sha256s,
+        new_raw_capture_sha256s=new_raw_capture_sha256s,
+        trading_dates=trading_dates,
+        complete_trading_days=complete_trading_days,
         synthetic=synthetic,
         note=note,
     )
