@@ -6,13 +6,14 @@
 ## Decision
 
 ```text
-BLOCKED_MINIMUM_REAL_HISTORY
+READY_FOR_TFEX2
 ```
 
-Real S50U26 1-minute market data is now structurally validated. The immutable interim
-dataset covers four complete trading days (2026-09-08 through 2026-09-11), contains 1,420
-rows, and passed all eleven validator checks. The only remaining readiness blocker is the
-unchanged minimum of five complete trading days. **TFEX-2 was not started.**
+The immutable extended S50U26 1-minute dataset covers exactly five complete trading dates
+(2026-09-08, 09, 10, 11, and 14), contains 1,775 rows, and passed all eleven validator
+checks. Its normalized checksum, ten source-capture checksums, two new-capture checksums,
+and four-day parent lineage were re-verified. The canonical acceptance classifier returns
+`TFEX2_REAL_DATA_VALIDATED`. **TFEX-2 remains `TFEX2_NOT_STARTED`.**
 
 | Requirement for `READY_FOR_TFEX2` | Status |
 | --- | --- |
@@ -22,12 +23,18 @@ unchanged minimum of five complete trading days. **TFEX-2 was not started.**
 | Exchange fee semantics corrected | ✅ cap and actual charge separated in the type system |
 | Market-data validator implemented | ✅ 11 checks, 4 exit codes, CLI exercised end to end |
 | A legitimate real 1-minute S50 source identified | ✅ Settrade Open API production; S50U26 raw contract and `1m` verified by real read-only calls |
-| At least one real raw contract dataset acquired and validated | ✅ S50U26, 2026-09-08 through 2026-09-11, 1,420 rows, validator PASS |
-| Minimum five complete trading days | ❌ 4 complete days; 2026-09-07 was unavailable and was not fabricated |
+| Real, non-synthetic market data | ✅ manifest `synthetic: false`; source provenance PASS |
+| Individual raw contract, not a continuous series | ✅ every bar is S50U26; `contract_identity` PASS |
+| Five complete trading dates / required sessions | ✅ exactly 5 dates, 1,775 expected bars, `missing_bars` and `session_boundaries` PASS |
+| Validator and real-market suite | ✅ validator overall PASS; 20 real-market tests passed across parent and child |
+| Provenance and immutable checksums | ✅ normalized file and all 10 raw captures match the manifest |
+| Parent extension lineage | ✅ parent dataset/hash match; 2 new capture hashes recorded; no overlap |
+| Expiry / LTD | ✅ no bars past S50U26 LTD 2026-09-29 16:30 Asia/Bangkok |
+| Minimum five complete trading days | ✅ 5 complete days; `minimum_dataset_requirement_met: true` |
 
-Readiness evidence status: **`TFEX2_INTERIM_REAL_DATA_VALIDATED`**. Implementation milestone
-status remains **`TFEX2_NOT_STARTED`**. The acceptance machinery refuses promotion until a
-new five-day dataset passes validation with explicit lineage.
+Readiness evidence status: **`TFEX2_REAL_DATA_VALIDATED`**. Data-readiness decision:
+**`READY_FOR_TFEX2`**. Implementation milestone status remains **`TFEX2_NOT_STARTED`**;
+readiness does not itself start replay or aggregation work.
 
 ---
 
@@ -155,9 +162,9 @@ The later read-only production probe resolved the account/server-dependent capab
 | `1m` interval | **CONFIRMED** |
 | Small request | **CONFIRMED** — 5 bars returned |
 
-The subsequent immutable four-day acquisition and validator PASS prove real-dataset
+The first immutable four-day parent and its five-day extended child prove real-dataset
 structure separately from both SDK introspection and capability probing. Neither the probe
-nor the dataset establishes a documented maximum history depth or official retention
+nor these datasets establish a documented maximum history depth or official retention
 policy. The empty 2026-09-07 response followed by complete 2026-09-08 sessions is only an
 observed, inferred availability boundary.
 
@@ -206,8 +213,10 @@ A gap found while testing the CLI and closed: a validator-generated starter mani
 `source: "UNVERIFIED - fill this in"`, which would otherwise have counted as real data.
 `source_is_verified` now rejects the placeholder, and a test pins it.
 
-Ten `real_market_data` tests execute against the interim real dataset: **10 passed**. They
-prove structural real-data validity but correctly leave the minimum-history result false.
+The same ten `real_market_data` tests execute independently against the four-day parent and
+five-day child: **20 passed**. The parent remains valid interim evidence; the child proves
+both structural validity and minimum-history sufficiency. Direct classification of the
+child returned `TFEX2_REAL_DATA_VALIDATED`, with no rejected datasets or reasons.
 
 ### PART W — download scripts
 
@@ -218,6 +227,8 @@ raw checksum before making two session requests. It publishes a new raw director
 five-day normalized dataset atomically; it never rewrites the four-day parent. Credentials
 come from the environment only; the SDK is imported lazily and is not a project dependency. **No API
 response is fabricated**. An explicitly requested unavailable session fails immediately.
+The 2026-09-14 extension completed successfully: two new immutable captures were added and
+the parent remained byte-for-byte checksum-valid.
 
 ### PART Y — source verification statuses
 
@@ -244,9 +255,9 @@ exchange fee and the broker commission remain `UNKNOWN`.
 ## Verification
 
 ```text
-uv run pytest tests/tfex          489 passed, 1 skipped
-uv run pytest -m anti_repaint      20 passed, 470 deselected
-uv run pytest -m real_market_data  10 passed, 480 deselected
+uv run pytest tests/tfex          499 passed, 1 skipped
+uv run pytest -m anti_repaint      22 passed, 478 deselected
+uv run pytest -m real_market_data  20 passed, 480 deselected
 uv run ruff check .                All checks passed
 uv run ruff format --check .       108 files already formatted
 uv run mypy .                      Success - 105 source files
@@ -255,35 +266,24 @@ uv run python scripts/import_tfex_contracts.py                0 conflicts
 ```
 
 The one skipped TFEX test is the optional installed-SDK signature check. The real-data tests
-execute against the four-day interim dataset; their success does not waive the fifth day.
+execute against both local datasets; the five-day child independently satisfies the
+minimum-history requirement.
 
 ---
 
-## Exact remaining operator workflow
+## Readiness promotion evidence
 
-The operator runs one read-only extension command from the repository root in the existing
-credentialed PowerShell session. It requests only the 2026-09-14 morning and afternoon
-sessions. A partial/empty response, checksum discrepancy, overlap, duplicate, wrong symbol,
-or validator failure publishes nothing and leaves the parent untouched.
+The ignored local child dataset is
+`backend/data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-14.csv`,
+with normalized SHA-256
+`b916b86e595df0bfbdc6652871202be2c5619b2cfc3196fd6b6daaf0fed24456`.
+It contains exactly 1,775 bars across the five manifest dates. Re-running the validator
+returned overall PASS with all eleven checks PASS. Re-hashing the normalized file, the
+four-day parent, and all ten source captures matched their manifests; two captures are
+explicitly identified as the new 2026-09-14 lineage, with no overlapping windows.
 
-```powershell
-uv run --directory backend --with "settrade-v2==2.2.1" python scripts/data_sources/settrade_history.py --symbol S50U26 --interval 1m --start 2026-09-14 --end 2026-09-14 --limit 200 --request-delay-seconds 1.1 --environment prod --extend-parent data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-11_INTERIM.csv --parent-normalized-sha256 d15558d1268b9e5228b860127344f38a7affb428315c7b770c43d00bbb58c424
-```
-
-Expected new normalized file:
-`backend/data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-14.csv`.
-It must contain exactly 1,775 bars on the five explicitly recorded trading dates.
-
-After acquisition, run the validator and real-data tests separately:
-
-```powershell
-uv run --directory backend python scripts/validate_tfex_market_data.py --file data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-14.csv --symbol S50U26 --interval 1m --timezone Asia/Bangkok --json data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-14.validation.json
-uv run --directory backend pytest -m real_market_data
-```
-
-Only an exact validator PASS, passing real-market tests, five complete dates, and valid
-parent/raw/normalized checksums may change the decision to `READY_FOR_TFEX2`. This task
-establishes readiness only; it does not start TFEX-2.
+These facts satisfy the data gate and only the data gate. No TFEX-2 replay, VWAP,
+aggregation, opening-range, or gap-engine implementation started in this re-evaluation.
 
 ### Also outstanding (does not block TFEX-2)
 

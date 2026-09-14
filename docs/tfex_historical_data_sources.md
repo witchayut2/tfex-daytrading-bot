@@ -109,11 +109,12 @@ authentication, derivatives market-data entitlement, historical candlesticks, ra
 evidence, distinct from the universal SDK signature above; its sanitized JSON remains local
 and ignored by Git.
 
-The later immutable acquisition covers four complete trading days, 2026-09-08 through
-2026-09-11, with 1,420 rows. It passed all validator checks and all ten real-market-data
-tests. That proves structural real-data validity, but the unchanged five-day minimum remains
-false. A 2026-09-07 request returned no bars while 2026-09-08 returned complete sessions;
-this is an observed, inferred historical-availability boundary, **not** proof of an official
+The first immutable acquisition is a four-day parent covering 2026-09-08 through
+2026-09-11 with 1,420 rows. Its extended child adds complete 2026-09-14 sessions and contains
+1,775 rows across exactly five trading dates. Both passed all validator checks; the child
+also satisfies the minimum-history requirement with parent/raw/normalized checksum lineage.
+A 2026-09-07 request returned no bars while 2026-09-08 returned complete sessions; this is
+an observed, inferred historical-availability boundary, **not** proof of an official
 retention policy.
 
 ---
@@ -185,47 +186,33 @@ SECONDARY_VALIDATION_SOURCE   SET / SETSMART tick or intraday data request
 ## Current status
 
 ```text
-BLOCKED_MINIMUM_REAL_HISTORY
+READY_FOR_TFEX2
 ```
 
-The Settrade capability gate and structural real-data gate are proven. The immutable S50U26
-interim dataset for 2026-09-08 through 2026-09-11 contains 1,420 real bars, has normalized
-SHA-256 `d15558d1268b9e5228b860127344f38a7affb428315c7b770c43d00bbb58c424`,
-and passed all eleven validator checks. `uv run pytest -m real_market_data` executed against
-it with 10 passes. Its manifest correctly keeps `minimum_dataset_requirement_met: false`.
+The immutable extended S50U26 dataset contains 1,775 real 1-minute bars on exactly
+2026-09-08, 09, 10, 11, and 14. Its normalized SHA-256 is
+`b916b86e595df0bfbdc6652871202be2c5619b2cfc3196fd6b6daaf0fed24456`.
+All eleven validator checks pass, and the real-market suite executes ten tests against both
+the four-day parent and five-day child: 20 passed. The child manifest records
+`minimum_dataset_requirement_met: true`.
 
 Real diagnostics observed S50U26 on 2026-09-07 returning zero bars and 2026-09-08 returning
 a complete 165-bar morning session. This is evidence of an endpoint availability boundary,
 not proof of an official retention policy. The unavailable day remains explicit and was not
 silently skipped, filled, or replaced.
 
-The next prospective day is 2026-09-14. Extension creates two new immutable raw captures
-(165 morning bars and 190 afternoon bars), then constructs—not mutates—a 1,775-row normalized
-dataset for exactly 2026-09-08, 09, 10, 11, and 14. Its manifest records the parent dataset
-and normalized checksum, all ten source-capture hashes, the two new hashes, and all five
-trading dates. Only an exact validator PASS may set the minimum requirement true.
+The completed extension added two immutable 2026-09-14 raw captures (165 morning bars and
+190 afternoon bars) without mutating the four-day parent. Re-verification matched the parent
+dataset ID and normalized checksum, all ten source-capture hashes, and both new-capture
+hashes. The capture windows do not overlap and every required session is complete.
 
-### Exactly what is required from the operator
+### Acquisition requirement satisfied
 
-**Option A — Settrade (preferred, likely free with an existing account)**
+No further Settrade request is required for the current readiness decision. Licensed raw
+and normalized files remain local and ignored by Git; no storage or redistribution right is
+inferred from API access. The ready gate authorizes no trading and does not start TFEX-2.
 
-1. Keep the already verified Open API credentials as process environment variables — never
-   in a repository file:
-   ```text
-   SETTRADE_APP_ID
-   SETTRADE_APP_SECRET
-   SETTRADE_BROKER_ID
-   SETTRADE_APP_CODE
-   ```
-2. Extend the validated interim dataset with 2026-09-14. This makes exactly two session
-   requests and leaves the parent untouched:
-   ```powershell
-   uv run --directory backend --with "settrade-v2==2.2.1" python scripts/data_sources/settrade_history.py --symbol S50U26 --interval 1m --start 2026-09-14 --end 2026-09-14 --limit 200 --request-delay-seconds 1.1 --environment prod --extend-parent data/tfex/historical/normalized/S50U26/S50U26_1m_2026-09-08_2026-09-11_INTERIM.csv --parent-normalized-sha256 d15558d1268b9e5228b860127344f38a7affb428315c7b770c43d00bbb58c424
-   ```
-3. Validate the new five-day CSV and run `pytest -m real_market_data`. The gate may become
-   `READY_FOR_TFEX2` only when both pass and all manifest/checksum lineage remains valid.
-
-**Option B — SET / SETSMART**
+**Alternative future source — SET / SETSMART**
 
 Purchase or request the data, place the original files under
 `backend/data/tfex/historical/raw/<SYMBOL>/`, and record the licence in the dataset
@@ -237,8 +224,9 @@ uv run python scripts/validate_tfex_market_data.py \
     --symbol S50Z26 --interval 1m --timezone Asia/Bangkok
 ```
 
-Either path ends at the same place: a validated raw contract dataset, at which point the
-gate can be re-evaluated.
+Any future replacement or corroborating dataset must pass the same raw-contract, provenance,
+validator, and licensing requirements; it does not alter the current ready decision by
+assertion alone.
 
 ## Sources
 

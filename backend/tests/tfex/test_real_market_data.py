@@ -3,7 +3,8 @@
 Every test here is marked ``real_market_data`` and **skips** when no validated non-synthetic
 dataset is present under ``backend/data/tfex/historical/normalized/<SYMBOL>/``. Skipping is not
 passing. Structural real-data validity and the minimum-history requirement are deliberately
-reported separately; the current four-day interim dataset proves only the former.
+reported separately. The four-day parent proves only structural validity; its five-day
+extended child proves both structural validity and minimum-history sufficiency.
 
 Run them explicitly::
 
@@ -160,7 +161,7 @@ def test_real_data_valid_is_distinct_from_minimum_history_requirement(
     real_config: TfexConfig,
     real_calendar: TradingCalendar,
 ) -> None:
-    """Four structurally valid real days are evidence, but cannot satisfy a five-day gate."""
+    """Structural validity and minimum-history sufficiency remain separate evidence."""
     _, report = _report(dataset, real_config, real_calendar)
     _, manifest = dataset
     evidence = assess_tfex2_status([report])

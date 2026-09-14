@@ -35,18 +35,19 @@ The repository itself is the final source of truth if it differs from this hando
 - Settrade production authentication, derivatives market-data entitlement, historical
   candlesticks, the raw `S50U26` contract, and the `1m` interval are confirmed by permitted
   read-only operator calls.
-- An immutable four-day S50U26 1-minute dataset (2026-09-08 through 2026-09-11,
-  1,420 rows) is `REAL_DATA_VALIDATED` and passes the real-market suite.
-- The unchanged minimum of five complete trading days is not met. The current gate is
-  `BLOCKED_MINIMUM_REAL_HISTORY`; TFEX-2 is `NOT STARTED`.
+- An immutable five-day S50U26 1-minute dataset (2026-09-08 through 2026-09-14,
+  1,775 rows) is `REAL_DATA_VALIDATED`, passes all validator checks, and has verified
+  parent/raw/normalized checksum lineage.
+- The minimum of five complete trading days is met. The current gate is
+  `READY_FOR_TFEX2`; TFEX-2 remains `NOT STARTED` until separately authorized.
 - Future risk/order/position and strategy-research protocols are locked as dormant,
   fail-closed contracts. They do not start TFEX-2, TFEX-4, or TFEX-5.
 - Licensed historical data and operator-specific capability evidence remain outside Git.
 
 Latest verified QA:
-- `uv run pytest tests/tfex` -> 489 passed, 1 skipped
-- `uv run pytest -m anti_repaint` -> 20 passed, 470 deselected
-- `uv run pytest -m real_market_data` -> 10 passed, 480 deselected
+- `uv run pytest tests/tfex` -> 499 passed, 1 skipped
+- `uv run pytest -m anti_repaint` -> 22 passed, 478 deselected
+- `uv run pytest -m real_market_data` -> 20 passed, 480 deselected
 - `uv run ruff check .` -> PASS
 - `uv run ruff format --check .` -> PASS, 108 files
 - `uv run mypy .` -> PASS, 105 source files
@@ -77,10 +78,9 @@ User has:
 - App code: `ALGO`
 - App ID and Secret held by the user
 
-Current engineering objective:
-extend the validated four-day S50U26 dataset with one immutable complete trading day, run
-the existing validator and real-market suite, and re-evaluate the five-day readiness gate.
-Do not begin TFEX-2 as part of that acquisition/readiness work.
+Current engineering boundary:
+the data-readiness gate is satisfied. TFEX-2 may begin only in a separate, explicitly
+authorized task; readiness itself does not start replay, aggregation, or strategy work.
 
 ## 6. Secret handling — critical
 Never print, log, echo, persist, commit, paste into docs, or expose:

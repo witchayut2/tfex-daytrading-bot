@@ -10,14 +10,15 @@ data-readiness gate modified anything.
 
 This note updates repository state without rewriting the historical baseline record below.
 The baseline commit now exists as `0a5daae`. The repository is on branch `main`, Git identity
-is configured locally, and the Codex migration commit `4ef9c5d` is HEAD before the pending
-working-tree work. The index is empty; post-baseline data-readiness, dormant risk, and
-research-protocol work remains unstaged in the working tree.
+is configured locally, and status commit `fb7cdc2` was HEAD before this readiness
+re-evaluation. The index and working tree were clean at the start of this task. Post-baseline
+data-readiness, dormant risk, and research-protocol work is preserved in later commits.
 
-The latest verified tree has 489 TFEX tests passing with 1 optional SDK check skipped,
-20 anti-repaint tests passing, 10 real-market-data tests passing against the four-day
-interim dataset, clean Ruff checks/formatting across 108 files, and strict mypy success over
-105 source files. Canonical current status and QA live in `docs/development_status.md`.
+The latest verified state has 499 TFEX tests passing with 1 optional SDK check skipped,
+22 anti-repaint tests passing, and 20 real-market-data tests passing across the immutable
+four-day parent and five-day extended dataset. Ruff is clean across 108 files and strict
+mypy succeeds over 105 source files. Canonical current status and QA live in
+`docs/development_status.md`.
 
 Everything from **Git state** onward is the original baseline-time evidence. Statements that
 identity or the baseline commit was blocked describe that historical moment, not current Git

@@ -1,7 +1,7 @@
 # Development Status
 
 Last updated: **2026-09-14**
-Current status label: **Data gate blocked; future risk/research contracts locked — not yet a trading system**
+Current status label: **Data gate ready; TFEX-2 not started — not yet a trading system**
 
 > Not ready for real money. `CLAUDE_TFEX.md` section 32 lists sixteen gates before real
 > orders may even be considered; none are met, and no broker order route exists in this build.
@@ -14,8 +14,8 @@ Current status label: **Data gate blocked; future risk/research contracts locked
 | --- | --- | --- |
 | **TFEX-0** | Audit | ✅ Complete — `docs/tfex_repository_audit.md` |
 | **TFEX-1** | Configuration, official-source registry, symbol parser, contract registry, trading calendar, holiday import, last-trading-day model, session state engine, tests | ✅ Complete, and now running on **real imported exchange data** |
-| **Data-readiness gate** | Baseline preservation, real calendar import, fee semantics, market-data validator, acceptance gate, source research | ✅ Structural real-data validation complete; decision **`BLOCKED_MINIMUM_REAL_HISTORY`** (`docs/tfex_data_readiness_gate.md`) |
-| TFEX-2 | TFEX-aligned replay: CSV import, 1m/5m/15m aggregation, midday break, session snapshots, VWAP, opening ranges, gap engine | ⛔ **Not started — four real days validated; five required.** Status `TFEX2_NOT_STARTED` |
+| **Data-readiness gate** | Baseline preservation, real calendar import, fee semantics, market-data validator, acceptance gate, source research | ✅ **`READY_FOR_TFEX2`** — five-day real-data, validation, checksum, and lineage evidence passed (`docs/tfex_data_readiness_gate.md`) |
+| TFEX-2 | TFEX-aligned replay: CSV import, 1m/5m/15m aggregation, midday break, session snapshots, VWAP, opening ranges, gap engine | ⬜ **Not started — data gate satisfied; separate authorization required.** Status `TFEX2_NOT_STARTED` |
 | TFEX-3 | Analysis: pivots, structure, BOS, CHoCH, liquidity map, sweeps, FVG, order blocks, regime | ⬜ Not started |
 | TFEX-4 | Strategies A and B, scoring, sizing, margin/expiry/session gates, kill switch | ⬜ Not started — dormant risk contract/unit scaffold only |
 | TFEX-5 | Paper execution: broker, order state machine, costs, next-bar fills, P&L, EOD flatten | ⬜ Not started — dormant state contract/unit scaffold only |
@@ -26,9 +26,9 @@ Current status label: **Data gate blocked; future risk/research contracts locked
 
 | Command | Result |
 | --- | --- |
-| `uv run pytest tests/tfex` | **489 passed, 1 skipped** |
-| `uv run pytest -m anti_repaint` | **20 passed, 470 deselected** |
-| `uv run pytest -m real_market_data` | **10 passed, 480 deselected** — structural interim real-data evidence |
+| `uv run pytest tests/tfex` | **499 passed, 1 skipped** |
+| `uv run pytest -m anti_repaint` | **22 passed, 478 deselected** |
+| `uv run pytest -m real_market_data` | **20 passed, 480 deselected** — parent plus five-day extended real-data evidence |
 | `uv run ruff check .` | All checks passed |
 | `uv run ruff format --check .` | 108 files already formatted |
 | `uv run mypy .` | Success — 105 source files |
@@ -47,7 +47,7 @@ Baseline before the gate: 277 passed / 12 anti-repaint / 71 mypy files
 | TFEX holiday calendar | **2026 only** — 20 holidays, 2 exchange special holidays | `VERIFIED_OFFICIAL` |
 | SET50 futures contract calendar | 6 listed contracts (Q26, U26, V26, Z26, H27, M27) | 4 `VERIFIED`, 2 `PUBLISHED_UNVERIFIED` |
 | Contract terms (tick size, point value) | corroborated against the exchange series endpoint | `CROSS_CHECKED` |
-| 1-minute market data | S50U26, 2026-09-08 through 2026-09-11, 1,420 rows | `REAL_DATA_VALIDATED`; minimum five-day history still blocked |
+| 1-minute market data | S50U26, five dates from 2026-09-08 through 2026-09-14, 1,775 rows | `REAL_DATA_VALIDATED`; five-day minimum met with lineage/checksums verified |
 
 Licensed raw market captures and normalized derivatives live under
 `backend/data/tfex/historical/` and remain ignored by Git. Their manifests retain SHA-256
@@ -73,12 +73,10 @@ acceptance states. Its pure model/test scaffold contains no replay, strategy, op
 broker, or order route. Performance and risk thresholds remain `UNCALIBRATED`, so no
 strategy can advance beyond `RESEARCH_ONLY`.
 
-## Blocked — operator action required
+## Ready boundary and outstanding work
 
-1. **Extend the validated S50U26 dataset with complete 2026-09-14 sessions.** *(blocks TFEX-2)*
-   The safe two-request command and lineage rules are in
-   `docs/tfex_historical_data_sources.md`. Then validate the new 1,775-row five-day dataset
-   and run the real-market suite; do not modify the four-day parent.
+1. **TFEX-2 may begin only in a separate explicitly authorized task.** The data gate is
+   ready, but no replay, aggregation, VWAP, opening-range, or gap-engine work started here.
 2. **Import the 2027 holiday calendar** when TFEX publishes it. The endpoint serves only the
    current display year; 2025 and 2027 return HTTP 401 today. Until 2027 lands, S50H27 and
    S50M27 have no cross-checked expiry and anything reaching into 2027 fails closed.

@@ -3,8 +3,8 @@
 Backend for the TFEX SET50 Index Futures research and paper-trading platform.
 Specification: `../CLAUDE.md` and `../CLAUDE_TFEX.md`. Architecture: `../docs/tfex_architecture.md`.
 Current gate decision: `../docs/tfex_data_readiness_gate.md` —
-**`BLOCKED_MINIMUM_REAL_HISTORY`**. Four complete real S50U26 1-minute days are validated;
-the unchanged minimum is five. TFEX-2 is not started.
+**`READY_FOR_TFEX2`**. Five complete real S50U26 1-minute days are validated with checksum
+lineage. TFEX-2 is still not started.
 
 **Paper trading only.** There is no live order route, and `config/tfex.yaml` cannot enable one.
 
@@ -51,7 +51,7 @@ Validator exit codes: `0` PASS, `1` PASS_WITH_WARNINGS, `2` REJECTED,
 | --- | --- |
 | TFEX holidays | **2026 imported and verified** (20 holidays). 2025 and 2027 unavailable from the source; the calendar fails closed for them. |
 | SET50 contract calendar | **6 contracts imported**; the four 2026 contracts cross-checked against the derived rule with zero conflicts. |
-| 1-minute market data | **S50U26, four complete days, 1,420 rows, real-data validated.** The five-day minimum remains blocked. |
+| 1-minute market data | **S50U26, five complete days, 1,775 rows, real-data validated.** The readiness minimum is met. |
 
 Credentials are never stored here. The Settrade downloader reads `SETTRADE_APP_ID`,
 `SETTRADE_APP_SECRET`, `SETTRADE_BROKER_ID` and `SETTRADE_APP_CODE` from the environment and

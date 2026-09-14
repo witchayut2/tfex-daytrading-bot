@@ -2,8 +2,9 @@
 
 Status: **Milestone TFEX-1 complete, plus the data-readiness gate.** Configuration,
 provenance, calendar, contracts, sessions, cost provenance and market-data validation are
-implemented. Four complete S50U26 1-minute days are real-data validated; TFEX-2 remains
-blocked on the unchanged five-day minimum (`docs/tfex_data_readiness_gate.md`). Dormant risk,
+implemented. Five complete S50U26 1-minute days are real-data validated with checksum and
+parent-lineage evidence; the gate is `READY_FOR_TFEX2` while TFEX-2 remains not started
+(`docs/tfex_data_readiness_gate.md`). Dormant risk,
 order, and position-management contracts and the research-validation protocol are locked for
 future milestones, but no strategy, replay, optimizer, or execution runtime has started.
 Licensed historical data and operator-specific capability evidence stay local and ignored;
@@ -210,20 +211,21 @@ broker, or order-transport implementation was introduced.
 
 ## 7. Testing
 
-490 tests under `backend/tests/tfex/` (489 passed, 1 optional installed-SDK signature check
+500 tests under `backend/tests/tfex/` (499 passed, 1 optional installed-SDK signature check
 skipped). Two markers:
 
 - `anti_repaint` — encodes a non-repainting invariant, so the suite section 31 requires can
   be run on its own.
-- `real_market_data` — runs against the validated non-synthetic four-day dataset. Ten tests
-  pass, while minimum-history sufficiency remains separately false.
+- `real_market_data` — runs the same ten checks against both the non-synthetic four-day
+  parent and five-day extended dataset. Twenty tests pass; the child proves the minimum.
 
 Calendar fixtures use **invented** holiday dates, chosen to exercise the awkward cases: a
 holiday on the last calendar day of a month (June), a holiday sitting between the last two
 business days (September), and a closure spanning a year boundary (Dec 2025 → Jan 2026).
 They are labelled as fixtures in `conftest.py` so they can never be mistaken for TFEX data,
-and they are kept separate from the real imported data under `backend/data/tfex/official/`,
-which the `real_market_data` tests use instead.
+and they are kept separate from official exchange metadata under `backend/data/tfex/official/`
+and ignored licensed market data under `backend/data/tfex/historical/normalized/`, which the
+`real_market_data` tests use.
 
 ## 8. Locked future risk contract
 
@@ -237,8 +239,7 @@ Raw contract CSV import, 1m/5m/15m aggregation aligned to TFEX sessions, midday-
 handling, morning/afternoon snapshots, full-day and session VWAP, opening ranges, and the gap
 engine — plus `docs/tfex_candle_alignment.md`, which section 10 requires.
 
-**Blocked.** `docs/tfex_data_readiness_gate.md` records
-`BLOCKED_MINIMUM_REAL_HISTORY`: four complete S50U26 1-minute days are validated, but the
-unchanged gate requires at least five. The validated parent dataset remains intact; TFEX-2
-does not begin until a fifth complete day passes the existing validator, real-market tests,
-and provenance/checksum checks.
+**Ready, not started.** `docs/tfex_data_readiness_gate.md` records `READY_FOR_TFEX2`: the
+five-day S50U26 1-minute child passed the validator, real-market tests, and complete
+parent/raw/normalized checksum lineage. The four-day parent remains intact. This readiness
+decision does not start TFEX-2; implementation requires a separate authorized task.
