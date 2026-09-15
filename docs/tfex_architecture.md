@@ -188,6 +188,11 @@ acceptance matrix. Numeric volatility calibration and total liquidity-ranking po
 future declared research, not hidden defaults or missing neutral infrastructure. Neither
 TFEX-2 nor TFEX-3 introduces a strategy, broker, risk-runtime, or order transport.
 
+The future TFEX-4 implementation boundary is locked in `docs/tfex4_definition_lock.md`.
+That document defines causal Strategy A/B mechanics, scoring, proposal, gate, margin, and
+completion semantics without adding runtime strategy code or advancing
+`TFEX4_NOT_STARTED`. Its research and authorization prerequisites remain controlling.
+
 ## 5. Decisions the specification left open
 
 | # | Question | Decision | Rationale |

@@ -21,6 +21,7 @@ Before editing anything:
    - `docs/tfex_candle_alignment.md`
    - `docs/tfex2_acceptance.md`
    - `docs/tfex3_acceptance.md` if present
+   - `docs/tfex4_definition_lock.md` if present
    - `docs/baseline_manifest.md`
    - `docs/CODEX_HANDOFF.md` if present
 5. Run:
@@ -31,7 +32,7 @@ Before editing anything:
 
 The repository itself is the final source of truth if it differs from this handoff.
 
-## 3. Current verified state (2026-09-14)
+## 3. Current verified state (2026-09-15)
 
 - The verified baseline commit exists: `0a5daae`.
 - The current branch is `main`; Git identity is configured locally (never record its values here).
@@ -52,6 +53,10 @@ The repository itself is the final source of truth if it differs from this hando
   later declared research; no strategy has started.
 - Future risk/order/position and strategy-research protocols are locked as dormant,
   fail-closed contracts. They do not start TFEX-2, TFEX-4, or TFEX-5.
+- The deterministic TFEX-4 Strategy A/B, scoring, proposal, gate, margin, and milestone
+  definitions are locked in `docs/tfex4_definition_lock.md`. TFEX-4 remains
+  `TFEX4_NOT_STARTED`; the research prerequisites and explicit authorization to implement
+  remain outstanding.
 - Licensed historical data and operator-specific capability evidence remain outside Git.
 
 Latest verified QA:

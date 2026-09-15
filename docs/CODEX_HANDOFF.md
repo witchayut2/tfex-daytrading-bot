@@ -1,6 +1,6 @@
 # CODEX HANDOFF — TFEX Project
 
-## Current-state note — 2026-09-14
+## Current-state note — 2026-09-15
 
 The sections below are the original migration handoff and are retained as provenance. The
 repository has advanced: S50U26 one-minute data for five complete days (1,775 rows) is
@@ -9,7 +9,10 @@ passing. The current gate remains `READY_FOR_TFEX2`; TFEX-2 is now `TFEX2_COMPLE
 deterministic real-data replay and market-state acceptance. TFEX-3 is now
 `TFEX3_COMPLETE`; `docs/tfex3_definition_lock.md` and `docs/tfex3_acceptance.md` record its
 deterministic neutral-analysis definitions and evidence. Numeric calibration and total
-liquidity ranking remain future research; TFEX-4 is not started.
+liquidity ranking remain future research. `docs/tfex4_definition_lock.md` now records the
+deterministic initial Strategy A/B, scoring, proposal, gate, margin, and completion
+definitions, but TFEX-4 remains `TFEX4_NOT_STARTED` and no strategy implementation or
+research run has begun.
 
 The future risk/order/position contract is now locked in
 `docs/tfex_risk_order_position_contract.md` with dormant deterministic unit scaffolding.

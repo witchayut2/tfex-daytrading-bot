@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: **2026-09-14**
+Last updated: **2026-09-15**
 Current status label: **TFEX-2 and TFEX-3 complete — not yet a trading system**
 
 > Not ready for real money. `CLAUDE_TFEX.md` section 32 lists sixteen gates before real
@@ -17,7 +17,7 @@ Current status label: **TFEX-2 and TFEX-3 complete — not yet a trading system*
 | **Data-readiness gate** | Baseline preservation, real calendar import, fee semantics, market-data validator, acceptance gate, source research | ✅ **`READY_FOR_TFEX2`** — five-day real-data, validation, checksum, and lineage evidence passed (`docs/tfex_data_readiness_gate.md`) |
 | **TFEX-2** | TFEX-aligned replay: CSV import, 1m/5m/15m aggregation, midday break, session snapshots, VWAP, opening ranges, gap engine | ✅ **Complete — real five-day replay and all mandatory acceptance checks pass.** Status `TFEX2_COMPLETE` |
 | **TFEX-3** | Analysis: pivots, structure, BOS, CHoCH, liquidity map, sweeps, FVG, order blocks, regime | ✅ **Complete.** Status `TFEX3_COMPLETE`; numeric calibration remains future research |
-| TFEX-4 | Strategies A and B, scoring, sizing, margin/expiry/session gates, kill switch | ⬜ Not started — dormant risk contract/unit scaffold only |
+| TFEX-4 | Strategies A and B, scoring, sizing, margin/expiry/session gates, kill switch | ⬜ **`TFEX4_NOT_STARTED`** — deterministic definition locked; research prerequisites and implementation remain outstanding |
 | TFEX-5 | Paper execution: broker, order state machine, costs, next-bar fills, P&L, EOD flatten | ⬜ Not started — dormant state contract/unit scaffold only |
 | TFEX-6 | Visual dashboard | ⬜ Not started |
 | TFEX-7 | Read-only real-time adapter | ⬜ Not started |
@@ -74,13 +74,23 @@ acceptance states. Its pure model/test scaffold contains no replay, strategy, op
 broker, or order route. Performance and risk thresholds remain `UNCALIBRATED`, so no
 strategy can advance beyond `RESEARCH_ONLY`.
 
+## TFEX-4 definition locked without implementation
+
+`docs/tfex4_definition_lock.md` fixes the causal Strategy A/B state machines, deterministic
+zone/entry/stop semantics, explanatory scoring, the quantity-free `TradeProposal` boundary,
+pre-trade gate order, research-mode health evidence, margin history contract, and the exact
+meaning of eventual `TFEX4_COMPLETE`. Numeric alpha/risk choices remain uncalibrated or
+deferred to research. The total-post-trade portfolio margin free-equity formula is locked;
+its numeric required buffer remains uncalibrated. TFEX-4 remains `TFEX4_NOT_STARTED`.
+
 ## Completed boundary and outstanding work
 
 1. **TFEX-3 is complete under explicit authorization.** The locked neutral layer includes
    causal pivots/structure/BOS/CHoCH, deterministic Order Blocks, liquidity levels/sweeps
    and unweighted importance features, FVGs, and structure x volatility regimes. Numeric
-   volatility calibration and total ranking remain future declared research. TFEX-4 and
-   strategy research have not started. See `docs/tfex3_definition_lock.md` and
+   volatility calibration and total ranking remain future declared research. TFEX-4
+   implementation and strategy research have not started; its deterministic scope is now
+   locked in `docs/tfex4_definition_lock.md`. See `docs/tfex3_definition_lock.md` and
    `docs/tfex3_acceptance.md`.
 2. **Import the 2027 holiday calendar** when TFEX publishes it. The endpoint serves only the
    current display year; 2025 and 2027 return HTTP 401 today. Until 2027 lands, S50H27 and

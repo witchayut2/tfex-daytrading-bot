@@ -141,6 +141,29 @@ All must be deliberately supplied together as `RESEARCH_ONLY` before even the is
 risk engine can approve a paper/research proposal. No production calibration status or
 production default exists.
 
+### Margin/free-equity portfolio constraint
+
+`docs/tfex4_definition_lock.md` closes the margin-basis ambiguity. After the existing risk
+equations produce candidate quantity `q_risk`, the final approved quantity `q` must satisfy:
+
+```text
+total_post_trade_margin_requirement(q) =
+    existing_open_exposure_margin + proposed_trade_margin(q)
+
+free_equity_before_trade - total_post_trade_margin_requirement(q)
+    >= required_free_equity_buffer
+```
+
+All exposure uses the applicable versioned as-of and stricter-of margin records. The engine
+may retain `q_risk`, deterministically choose the greatest passing whole-contract quantity
+below it when that reduction is implemented in the same engine, or reject. It may never
+increase `q_risk` or use margin as a separate strategy sizing algorithm. Incremental margin
+alone is insufficient. The numeric `required_free_equity_buffer` remains `UNCALIBRATED`;
+the legacy `2.0` research default is not production evidence. Unknown, stale, conflicting,
+or unavailable production account/margin evidence fails closed, and historical research
+may use only explicitly labelled predeclared assumptions rather than fabricated live
+account equity.
+
 ## 5. Reward/risk and expectancy
 
 For a fixed target:
