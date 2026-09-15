@@ -9,7 +9,8 @@ parameters, calibrate an acceptance threshold, or authorize an order.
 
 Read this with `CLAUDE.md`, `CLAUDE_TFEX.md`, `docs/tfex_architecture.md`,
 `docs/tfex_data_readiness_gate.md`, and
-`docs/tfex_risk_order_position_contract.md`. The current real S50U26 1-minute dataset
+`docs/tfex_risk_order_position_contract.md`. The finite R4 procedure is canonical in
+`docs/tfex4_research_plan.md`. The current real S50U26 1-minute dataset
 contains five complete trading days and satisfies the data-readiness gate. Current decision:
 `READY_FOR_TFEX2`. TFEX-2 and TFEX-3 neutral market analysis are complete, but no strategy
 analysis or parameter research has started.
@@ -161,9 +162,9 @@ model may permit same-bar treatment only with specific post-confirmation tick/qu
 evidence declared in advance; it may not infer ordering from OHLC.
 
 Market, limit, and stop intents have distinct shapes and fill rule IDs. Partial fills have
-their own rule ID. Future implementations must specify conservative behavior for touches,
-gaps, bid/ask spread, queue/available size, trigger ordering, partial fills, cancellations,
-and session transitions. No fill model exists in this scaffolding.
+their own rule ID. `docs/tfex4_research_plan.md` locks the conservative initial OHLC
+behavior for touches, gaps, queue assumptions, trigger ordering, partial fills,
+cancellations, and session transitions. No fill simulator exists in this scaffolding.
 
 Every replayed path, including rejections, must retain proposal, risk-decision, approved-plan
 or rejection, eligibility, order, partial-fill/fill, protection, management, and exit events.
@@ -262,8 +263,10 @@ trial ID, overwriting a losing result, or introducing an undeclared winning para
 error.
 
 Reports must disclose the number of strategies, parameter sets, filters, exits, stops, and
-selection rules examined. Any future statistical correction for multiple comparisons must
-be declared before the final holdout; no correction is invented here.
+selection rules examined. `docs/tfex4_research_plan.md` locks the initial multiplicity
+policy as predeclared families, full trial disclosure, and validation confirmation. It
+claims no formal p-value correction; any future formal method requires a new preregistered
+protocol version before the final holdout.
 
 ## 12. Strategy A, B, and C evaluation
 
@@ -366,9 +369,11 @@ write licensed data, or begin any TFEX implementation milestone.
 
 ## 18. Pre-code governance and post-code research gates
 
-`docs/tfex4_research_readiness.md` is the canonical readiness plan. Deterministic strategy
-code is necessary to generate research evidence, so calibrated results are not a pre-code
-requirement.
+`docs/tfex4_research_readiness.md` defines the readiness ladder, and
+`docs/tfex4_research_plan.md` is the canonical R4 procedure. Deterministic strategy code is
+necessary to generate research evidence, so calibrated results are not a pre-code
+requirement. The current research-readiness state is `R4_RESEARCH_PLAN_LOCKED`; R5 is not
+granted.
 
 Before deterministic Strategy A/B code begins:
 

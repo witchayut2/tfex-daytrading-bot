@@ -8,9 +8,10 @@ connect to Settrade, create an order, or authorize paper or live execution.
 
 Read it with `CLAUDE.md`, `CLAUDE_TFEX.md`, `docs/tfex_architecture.md`,
 `docs/tfex3_acceptance.md`, `docs/tfex_risk_order_position_contract.md`, and
-`docs/tfex_strategy_research_validation_protocol.md`. The locked risk and research
-contracts remain authoritative. If future code cannot satisfy every applicable rule below,
-it must fail closed rather than choose a plausible default.
+`docs/tfex_strategy_research_validation_protocol.md`. The locked R4 procedures are in
+`docs/tfex4_research_plan.md`. The locked risk and research contracts remain authoritative.
+If future code cannot satisfy every applicable rule below, it must fail closed rather than
+choose a plausible default.
 
 ## 1. Milestone boundary
 
@@ -44,9 +45,10 @@ paper-ready, live-ready, or authorized to trade.
 
 **Decision: `LOCK_NOW`.** This interpretation follows the explicit TFEX-4/TFEX-5 milestone
 split and the separate evidence lifecycle. Backtest results cannot precede the code that
-produces them; the research protocol requires the plan, search space, cost scenarios,
-thresholds, adequate history, and authorization to be declared before implementation, not
-`BACKTEST_EVIDENCE` to exist before code.
+produces them. Pre-code governance requires the data plan, finite research procedure,
+execution/cost structures, explicit unknowns, untouched holdout, and authorization.
+Adequate history and numeric research inputs are required before parameter search, not
+before deterministic `RESEARCH_ONLY` code.
 
 ## 2. Shared strategy causality contract
 
@@ -798,7 +800,8 @@ alpha. **Decision: `LOCK_NOW` for mechanics; `DEFER_TO_RESEARCH` for numeric val
 
 The former research-protocol wording placed calibrated research results in the pre-code
 gate even though its evidence ladder requires implemented strategy output. The canonical
-resolution is recorded in `docs/tfex4_research_readiness.md` and protocol section 18.
+resolution is recorded in `docs/tfex4_research_readiness.md`,
+`docs/tfex4_research_plan.md`, and protocol section 18.
 
 ### Locked rule
 
@@ -967,7 +970,8 @@ strategy.
 ## 20. Preconditions to begin implementation
 
 This definition lock alone does not authorize TFEX-4. Before runtime strategy code begins,
-the pre-code gate in `docs/tfex4_research_readiness.md` requires:
+the pre-code gates in `docs/tfex4_research_readiness.md` and
+`docs/tfex4_research_plan.md` require:
 
 - green TFEX-2/3 correctness and this completed definition lock;
 - locked data-acquisition and multi-contract segmentation plans;
@@ -989,7 +993,7 @@ Until then the final state is:
 TFEX-2 = TFEX2_COMPLETE
 TFEX-3 = TFEX3_COMPLETE
 TFEX-4 = TFEX4_NOT_STARTED
-research readiness = R1_DATA_PLAN_LOCKED
+research readiness = R4_RESEARCH_PLAN_LOCKED
 strategy evidence = RESEARCH_ONLY
 live_orders_enabled = false
 ```

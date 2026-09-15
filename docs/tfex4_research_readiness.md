@@ -1,6 +1,6 @@
 # TFEX-4 Research Readiness
 
-Status: **`R1_DATA_PLAN_LOCKED` / `TFEX4_NOT_STARTED`**
+Status: **`R4_RESEARCH_PLAN_LOCKED` / `TFEX4_NOT_STARTED`**
 
 This document is the canonical research-readiness plan for TFEX-4. It governs when
 deterministic Strategy A/B implementation, parameter research, walk-forward evaluation,
@@ -11,11 +11,14 @@ The deterministic mechanics remain controlled by `docs/tfex4_definition_lock.md`
 evidence lifecycle and anti-overfitting rules remain controlled by
 `docs/tfex_strategy_research_validation_protocol.md`. This plan separates their pre-code
 governance requirements from evidence that can exist only after deterministic code exists.
+`docs/tfex4_research_plan.md` is canonical for the finite R4 candidate, budget,
+multiplicity, execution, cost, calibration, robustness, and promotion procedures.
 
 ```text
 TFEX-2 = TFEX2_COMPLETE
 TFEX-3 = TFEX3_COMPLETE
 TFEX-4 = TFEX4_NOT_STARTED
+research readiness = R4_RESEARCH_PLAN_LOCKED
 strategy evidence = RESEARCH_ONLY
 live_orders_enabled = false
 ```
@@ -327,10 +330,11 @@ Locked now:
 - same-bar OHLC fills are prohibited; and
 - same-bar fills require explicit post-confirmation trade-tick sequence evidence.
 
-Before trusted backtests, a later definition lock must specify market fills, limit
-touch/cross/queue behavior, stop triggering/fills, stop-versus-target same-bar precedence,
-gap-through behavior, partial fills, spread/slippage application, missing-event behavior,
-and session/expiry cancellation.
+`docs/tfex4_research_plan.md` now locks the conservative initial OHLC model for market
+fills, limit cross/queue treatment, stop triggering/fills, stop-first same-bar ambiguity,
+gap-through behavior, all-or-none research fills, spread/slippage accounting,
+missing-event failure, and session/expiry cancellation. Runtime implementation and tests
+remain future work.
 
 These are research backtest semantics. TFEX-5 continues to own runtime execution.
 
@@ -404,12 +408,10 @@ separate branches; R5 does not require downloaded Tier B data, while R6 does.
 
 ## 19. Current decision and next gates
 
-This plan establishes `R1_DATA_PLAN_LOCKED`. It does not establish R2, R3, R4, or R5.
-
-To reach R4, the repository still needs finite candidate-generation rules, an experiment
-budget, a multiplicity-control method, complete research fill semantics, and frozen
-metric/robustness and threshold-calibration procedures. The cost-scenario structure is
-locked here; its numeric values remain a later R6 prerequisite.
+This document established R1. The canonical finite research contract in
+`docs/tfex4_research_plan.md` now establishes `R4_RESEARCH_PLAN_LOCKED`. R2/R3 have not
+occurred, and R5 is not granted. Numeric strategy ranges and complete numeric cost models
+remain later R6 prerequisites rather than R4 inventions.
 
 To reach R5, R4 must be accepted, the holdout must remain untouched, the governance and
 correctness checks must pass, and the user must explicitly authorize TFEX-4 implementation.

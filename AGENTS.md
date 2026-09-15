@@ -23,6 +23,7 @@ Before editing anything:
    - `docs/tfex3_acceptance.md` if present
    - `docs/tfex4_definition_lock.md` if present
    - `docs/tfex4_research_readiness.md` if present
+   - `docs/tfex4_research_plan.md` if present
    - `docs/baseline_manifest.md`
    - `docs/CODEX_HANDOFF.md` if present
 5. Run:
@@ -56,9 +57,9 @@ The repository itself is the final source of truth if it differs from this hando
   fail-closed contracts. They do not start TFEX-2, TFEX-4, or TFEX-5.
 - The deterministic TFEX-4 Strategy A/B, scoring, proposal, gate, margin, and milestone
   definitions are locked in `docs/tfex4_definition_lock.md`. TFEX-4 remains
-  `TFEX4_NOT_STARTED`. The canonical research acquisition and governance plan is locked at
-  `R1_DATA_PLAN_LOCKED` in `docs/tfex4_research_readiness.md`; later research-plan gates and
-  explicit authorization to implement remain outstanding.
+  `TFEX4_NOT_STARTED`. Data planning remains locked by `docs/tfex4_research_readiness.md`,
+  and the finite pre-code research plan is now `R4_RESEARCH_PLAN_LOCKED` in
+  `docs/tfex4_research_plan.md`. Explicit authorization to implement remains outstanding.
 - Licensed historical data and operator-specific capability evidence remain outside Git.
 
 Latest verified QA:
@@ -98,8 +99,9 @@ User has:
 Current engineering boundary:
 the data-readiness gate, TFEX-2, and TFEX-3 neutral analysis are complete. Numeric regime
 calibration, liquidity-ranking research, strategies, execution, and live-order work have
-not started. TFEX-4 research readiness is `R1_DATA_PLAN_LOCKED`; no strategy code or
-research data acquisition is authorized by that status.
+not started. TFEX-4 research readiness is `R4_RESEARCH_PLAN_LOCKED`; R2/R3 data work and R5
+implementation authorization remain outstanding. No strategy code or research data
+acquisition is authorized by that status.
 
 ## 6. Secret handling — critical
 Never print, log, echo, persist, commit, paste into docs, or expose:

@@ -9,6 +9,7 @@ milestones. TFEX-3 deterministic neutral analysis is `TFEX3_COMPLETE`: pivots, s
 BOS/CHoCH, Order Blocks, liquidity/sweeps/importance features, FVGs, and layered regime
 infrastructure are implemented. Numeric calibration and total ranking remain future
 research. Strategies, optimization, execution, and live trading have not started.
+TFEX-4 research governance is `R4_RESEARCH_PLAN_LOCKED`; this status does not start TFEX-4.
 Licensed historical data and operator-specific capability evidence stay local and ignored;
 their universal SDK/API conclusions are captured in tests and canonical readiness docs.
 
@@ -176,7 +177,9 @@ TFEX-4/TFEX-5 runtime:
 | `risk/boundary.py` | Strategies emit proposals; future execution admits approved plans only. |
 
 The research package is likewise a dormant contract layer, not a backtester or a started
-strategy milestone. `docs/tfex_strategy_research_validation_protocol.md` is canonical:
+strategy milestone. `docs/tfex_strategy_research_validation_protocol.md` defines the
+evidence contract, while `docs/tfex4_research_plan.md` defines the canonical finite R4
+procedure:
 
 | Module | Locked future research contract (no replay or strategy runtime) |
 | --- | --- |
