@@ -17,7 +17,7 @@ Current status label: **TFEX-2 and TFEX-3 complete — not yet a trading system*
 | **Data-readiness gate** | Baseline preservation, real calendar import, fee semantics, market-data validator, acceptance gate, source research | ✅ **`READY_FOR_TFEX2`** — five-day real-data, validation, checksum, and lineage evidence passed (`docs/tfex_data_readiness_gate.md`) |
 | **TFEX-2** | TFEX-aligned replay: CSV import, 1m/5m/15m aggregation, midday break, session snapshots, VWAP, opening ranges, gap engine | ✅ **Complete — real five-day replay and all mandatory acceptance checks pass.** Status `TFEX2_COMPLETE` |
 | **TFEX-3** | Analysis: pivots, structure, BOS, CHoCH, liquidity map, sweeps, FVG, order blocks, regime | ✅ **Complete.** Status `TFEX3_COMPLETE`; numeric calibration remains future research |
-| TFEX-4 | Strategies A and B, scoring, sizing, margin/expiry/session gates, kill switch | ⬜ **`TFEX4_NOT_STARTED`** — deterministic definition locked; research prerequisites and implementation remain outstanding |
+| TFEX-4 | Strategies A and B, scoring, sizing, margin/expiry/session gates, kill switch | ⬜ **`TFEX4_NOT_STARTED`** — deterministic definition locked; research readiness is `R1_DATA_PLAN_LOCKED`; later research-plan gates and implementation remain outstanding |
 | TFEX-5 | Paper execution: broker, order state machine, costs, next-bar fills, P&L, EOD flatten | ⬜ Not started — dormant state contract/unit scaffold only |
 | TFEX-6 | Visual dashboard | ⬜ Not started |
 | TFEX-7 | Read-only real-time adapter | ⬜ Not started |
@@ -83,6 +83,15 @@ meaning of eventual `TFEX4_COMPLETE`. Numeric alpha/risk choices remain uncalibr
 deferred to research. The total-post-trade portfolio margin free-equity formula is locked;
 its numeric required buffer remains uncalibrated. TFEX-4 remains `TFEX4_NOT_STARTED`.
 
+## TFEX-4 research data plan locked without acquisition
+
+`docs/tfex4_research_readiness.md` corrects the pre-code/post-code governance circularity
+and records `R1_DATA_PLAN_LOCKED`. The current Tier B acquisition target is approximately
+12-18 months, 240-360 trading days, at least five raw symbols, and at least four observed
+transitions, with every contract kept separate. This is a planning target rather than a
+statistical-sufficiency claim. No data was acquired, no parameter range or numeric cost was
+selected, and no strategy implementation began.
+
 ## Completed boundary and outstanding work
 
 1. **TFEX-3 is complete under explicit authorization.** The locked neutral layer includes
@@ -96,6 +105,9 @@ its numeric required buffer remains uncalibrated. TFEX-4 remains `TFEX4_NOT_STAR
    current display year; 2025 and 2027 return HTTP 401 today. Until 2027 lands, S50H27 and
    S50M27 have no cross-checked expiry and anything reaching into 2027 fails closed.
 3. **Verify the actual exchange fee and broker commission** against a statement or agreement.
+4. **Lock the remaining R4 research plan.** Finite candidate-generation rules, experiment
+   budget, multiplicity control, complete research fill semantics, and metric/threshold
+   procedures are still required before TFEX-4 implementation may be authorized.
 
 ## Known gaps and risks
 

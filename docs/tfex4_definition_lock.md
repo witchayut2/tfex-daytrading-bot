@@ -796,16 +796,20 @@ alpha. **Decision: `LOCK_NOW` for mechanics; `DEFER_TO_RESEARCH` for numeric val
 
 ### Repository evidence and ambiguity
 
-The research protocol section 18 requires an adequate real-data history, declared
-chronological partitions/search spaces, labelled costs, calibrated and reviewed acceptance
-thresholds, and explicit authorization before strategy implementation. Its evidence ladder
-then requires implemented strategy output to produce backtest and later evidence.
+The former research-protocol wording placed calibrated research results in the pre-code
+gate even though its evidence ladder requires implemented strategy output. The canonical
+resolution is recorded in `docs/tfex4_research_readiness.md` and protocol section 18.
 
 ### Locked rule
 
 `BACKTEST_EVIDENCE` is not required before deterministic code can exist; that would be
-temporally impossible. Before code begins, however, all governance prerequisites in
-protocol section 18 still apply. Code initially has research state `RESEARCH_ONLY`.
+temporally impossible. Pre-code governance locks the data and segmentation plans, search
+dimensions, experiment governance, execution/cost structures, explicit unknowns, untouched
+holdout, and user authorization. Code initially has research state `RESEARCH_ONLY`.
+
+Adequate downloaded history, actual chronological partitions, finite candidate sets,
+numeric cost scenarios, and calibration inputs are post-code prerequisites for parameter
+search and promotion, not prerequisites merely to write deterministic code.
 
 After implementation:
 
@@ -963,15 +967,21 @@ strategy.
 ## 20. Preconditions to begin implementation
 
 This definition lock alone does not authorize TFEX-4. Before runtime strategy code begins,
-the research protocol still requires:
+the pre-code gate in `docs/tfex4_research_readiness.md` requires:
 
-- adequate licensed history for declared development/validation/holdout partitions;
-- declared Strategy A/B parameter, zone, trigger, filter, stop, and exit search spaces;
-- explicit research cost scenarios or actual broker fee evidence;
-- calibrated and reviewed performance, risk, and robustness acceptance thresholds;
-- a versioned, reviewed numeric `required_free_equity_buffer` and explicit mapping of any
-  legacy research-default field; and
+- green TFEX-2/3 correctness and this completed definition lock;
+- locked data-acquisition and multi-contract segmentation plans;
+- declared Strategy A/B search dimensions and experiment governance;
+- declared research execution-assumption and cost-scenario structures;
+- every unknown numeric value, including `required_free_equity_buffer`, to remain explicit
+  and fail-closed;
+- an untouched final holdout; and
 - explicit user authorization to start TFEX-4.
+
+Adequate licensed history, actual chronological partitions, finite candidate sets, numeric
+cost scenarios, and calibration inputs are required before parameter search, threshold
+selection, walk-forward, holdout access, or promotion. They are not required merely to
+write deterministic code that remains `RESEARCH_ONLY`.
 
 Until then the final state is:
 
@@ -979,6 +989,7 @@ Until then the final state is:
 TFEX-2 = TFEX2_COMPLETE
 TFEX-3 = TFEX3_COMPLETE
 TFEX-4 = TFEX4_NOT_STARTED
+research readiness = R1_DATA_PLAN_LOCKED
 strategy evidence = RESEARCH_ONLY
 live_orders_enabled = false
 ```

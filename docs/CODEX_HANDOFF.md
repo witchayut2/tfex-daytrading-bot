@@ -12,7 +12,10 @@ deterministic neutral-analysis definitions and evidence. Numeric calibration and
 liquidity ranking remain future research. `docs/tfex4_definition_lock.md` now records the
 deterministic initial Strategy A/B, scoring, proposal, gate, margin, and completion
 definitions, but TFEX-4 remains `TFEX4_NOT_STARTED` and no strategy implementation or
-research run has begun.
+research run has begun. `docs/tfex4_research_readiness.md` now records the canonical
+pre-code/post-code boundary and the Tier B multi-contract acquisition plan. Research
+readiness is `R1_DATA_PLAN_LOCKED`; R4 research-plan governance and explicit user
+authorization remain outstanding before deterministic `RESEARCH_ONLY` code may begin.
 
 The future risk/order/position contract is now locked in
 `docs/tfex_risk_order_position_contract.md` with dormant deterministic unit scaffolding.

@@ -364,17 +364,30 @@ milestone.
 These files are architecture/test scaffolding. They do not read real data, call Settrade,
 write licensed data, or begin any TFEX implementation milestone.
 
-## 18. Preconditions before implementation work
+## 18. Pre-code governance and post-code research gates
 
-Before any strategy or replay implementation begins:
+`docs/tfex4_research_readiness.md` is the canonical readiness plan. Deterministic strategy
+code is necessary to generate research evidence, so calibrated results are not a pre-code
+requirement.
 
-1. the existing five-complete-trading-day real-data gate must pass without weakening;
-2. TFEX-2 must be explicitly authorized and implemented first;
-3. partition dates and all search spaces must be declared from adequate licensed history;
-4. actual broker fee evidence or explicitly labelled research scenarios must exist;
-5. performance, risk, and robustness thresholds must be calibrated and reviewed; and
-6. the user must explicitly authorize each later milestone.
+Before deterministic Strategy A/B code begins:
 
-Until then, this protocol is `IMPLEMENTED` and `TESTED` as a contract only. It is not
-backtest evidence, walk-forward evidence, holdout evidence, paper evidence, or live-trading
-readiness.
+1. the existing five-complete-trading-day correctness gate and TFEX-2/3 must remain green;
+2. the TFEX-4 definition lock must be complete;
+3. data-acquisition and multi-contract segmentation plans must be locked;
+4. search dimensions, experiment governance, execution-assumption structure, and
+   cost-scenario structure must be declared;
+5. unknown numeric values must remain explicit and fail-closed;
+6. the final holdout must remain uninspected; and
+7. the user must explicitly authorize TFEX-4 implementation.
+
+Code begins with evidence state `RESEARCH_ONLY`. Before parameter search, threshold
+selection, walk-forward, holdout access, or promotion, adequate licensed history must be
+acquired and validated; actual chronological partitions, finite candidate sets, numeric
+cost scenarios, calibration inputs, and complete research-execution rules must be frozen.
+Thresholds may then be calibrated only from permitted development/calibration evidence and
+must be frozen before later validation stages.
+
+Until those later gates are satisfied, this protocol is `IMPLEMENTED` and `TESTED` as a
+contract only. Deterministic implementation does not itself constitute backtest,
+walk-forward, holdout, paper, or live-readiness evidence.
